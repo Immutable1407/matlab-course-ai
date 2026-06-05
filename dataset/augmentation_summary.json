@@ -1,0 +1,12 @@
+{
+  "raw_items": 49,
+  "supplemental_items": 10,
+  "base_items": 59,
+  "train_base_items": 50,
+  "eval_base_items": 9,
+  "variants_per_train_item": 6,
+  "final_train_rows": 300,
+  "final_eval_rows": 9,
+  "runtime_examples": "/Users/immutable1407/Desktop/大三/数学实验final/runtime/final_examples.json",
+  "method": "保守增强：训练题目改写 + 补充常见算法样例；不自动替换代码参数。"
+}

@@ -1,0 +1,24 @@
+.DS_Store
+.Rhistory
+__pycache__/
+*.py[cod]
+
+.venv-download/
+.venv/
+venv/
+
+models/
+outputs/
+gguf/
+*.gguf
+*.safetensors
+*.zip
+*.pt
+*.pth
+*.bin
+
+Open Mat/app_koboldcpp/
+Open Mat/gguf/
+
+.idea/
+.vscode/

@@ -1,0 +1,19 @@
+{
+  "source_dir": "/Users/immutable1407/Desktop/大三/数学实验final",
+  "markdown_files": [
+    "Cls01.md",
+    "Cls02.md",
+    "Cls03.md",
+    "Cls04.md",
+    "Cls05.md",
+    "Cls06.md",
+    "Cls07.md",
+    "Cls08.md",
+    "Cls09.md"
+  ],
+  "total_pairs": 49,
+  "train_pairs": 42,
+  "eval_pairs": 7,
+  "dataset_dir": "/Users/immutable1407/Desktop/大三/数学实验final/dataset",
+  "runtime_examples": "/Users/immutable1407/Desktop/大三/数学实验final/runtime/examples.json"
+}

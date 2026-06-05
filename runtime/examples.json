@@ -1,0 +1,345 @@
+[
+  {
+    "id": "Cls01-001",
+    "source_file": "Cls01.md",
+    "title": "第1题",
+    "question": "通过编程用左点法、梯形法、抛物线法计算\n\n\\[\n\\int_0^2 e^{3x}\\sin(2x)\\,dx\n\\]\n\n并分析同一方法对不同步长的误差关系。",
+    "answer": "format long\n\nsyms x\nfx = exp(3*x)*sin(2*x);\n\na = 0;\nb = 2;\n\n% 求精确值\nI_exact = int(fx, x, a, b);\nI_exact = double(I_exact);\nfprintf('精确值 I = %.12f\\n\\n', I_exact);\n\nN = [10 20 40 80 160 320];\n\nfprintf('   n          左点法误差         梯形法误差        抛物线法误差\\n');\nfprintf('------------------------------------------------------------------\\n');\n\nfor k = 1:length(N)\n    n = N(k);\n    h = (b-a)/n;\n\n    I_left = 0;\n    I_trap = 0;\n    I_simp = 0;\n\n    % 左点法\n    for i = 1:n\n        xj = a + (i-1)*h;\n        fxj = subs(fx, x, xj);\n        I_left = I_left + fxj*h;\n    end\n    I_left = double(I_left);\n\n    % 梯形法\n    for i = 1:n\n        xj = a + (i-1)*h;\n        xi = a + i*h;\n        fxj = subs(fx, x, xj);\n        fxi = subs(fx, x, xi);\n        I_trap = I_trap + (fxj + fxi)*h/2;\n    end\n    I_trap = double(I_trap);\n\n    % Simpson法\n    if mod(n,2) ~= 0\n        error('Simpson法要求分段数 n 为偶数');\n    end\n\n    for i = 1:2:n\n        x0 = a + (i-1)*h;\n        x1 = x0 + h;\n        x2 = x0 + 2*h;\n\n        fx0 = subs(fx, x, x0);\n        fx1 = subs(fx, x, x1);\n        fx2 = subs(fx, x, x2);\n\n        I_simp = I_simp + (h/3)*(fx0 + 4*fx1 + fx2);\n    end\n    I_simp = double(I_simp);\n\n    % 误差\n    err_left = abs((I_left - I_exact)/I_exact);\n    err_trap = abs((I_trap - I_exact)/I_exact);\n    err_simp = abs((I_simp - I_exact)/I_exact);\n\n    fprintf('%5d     %16.8e   %16.8e   %16.8e\\n', ...\n            n, err_left, err_trap, err_simp);\nend"
+  },
+  {
+    "id": "Cls01-002",
+    "source_file": "Cls01.md",
+    "title": "第2题",
+    "question": "分别用梯形法和抛物线法按照下表数据计算积分\n\n\\[\n\\int_{0.3}^{1.5} y(x)\\,dx\n\\]\n\n已知数据：\n\n| x | 0.3 | 0.5 | 0.7 | 0.9 | 1.1 | 1.3 | 1.5 |\n|---|---|---|---|---|---|---|---|\n| y | 0.3985 | 0.6598 | 0.9147 | 1.1611 | 1.3971 | 1.6212 | 1.8325 |",
+    "answer": "x = [0.3 0.5 0.7 0.9 1.1 1.3 1.5];\ny = [0.3985 0.6598 0.9147 1.1611 1.3971 1.6212 1.8325];\n\n% 梯形法\nI_trap = trapz(x, y);\n\n% Simpson法\nh = x(2) - x(1);\nn = length(x) - 1;\n\nI_simp = h/3 * ( y(1) + y(end) ...\n    + 4*sum(y(2:2:end-1)) ...\n    + 2*sum(y(3:2:end-2)) );\n\nfprintf('梯形法结果 I_trap = %.8f\\n', I_trap);\nfprintf('Simpson法结果 I_simp = %.8f\\n', I_simp);"
+  },
+  {
+    "id": "Cls01-003",
+    "source_file": "Cls01.md",
+    "title": "第3题",
+    "question": "使用矩形法、梯形法、抛物线法计算积分\n\n\\[\n\\int_0^{10} e^{-0.8t|\\sin t|}\\,dt\n\\]",
+    "answer": "format long\n\nsyms t\nft = exp(-0.8*t*abs(sin(t)));\n\na = 0;\nb = 10;\nn = 200;\nh = (b-a)/n;\n\nI_rect = 0;\nI_trap = 0;\nI_simp = 0;\n\n% 矩形法和梯形法\nfor i = 1:n\n    tj = a + (i-1)*h;\n    ti = a + i*h;\n\n    ftj = subs(ft, t, tj);\n    fti = subs(ft, t, ti);\n\n    I_rect = I_rect + ftj*h;\n    I_trap = I_trap + (ftj + fti)*h/2;\nend\n\n% Simpson法\nfor i = 1:2:n\n    t0 = a + (i-1)*h;\n    t1 = t0 + h;\n    t2 = t0 + 2*h;\n\n    ft0 = subs(ft, t, t0);\n    ft1 = subs(ft, t, t1);\n    ft2 = subs(ft, t, t2);\n\n    I_simp = I_simp + h/3*(ft0 + 4*ft1 + ft2);\nend\n\nI_rect = double(I_rect);\nI_trap = double(I_trap);\nI_simp = double(I_simp);\n\nfprintf('矩形法计算结果   = %.12f\\n', I_rect);\nfprintf('梯形法计算结果   = %.12f\\n', I_trap);\nfprintf('抛物线法计算结果 = %.12f\\n', I_simp);"
+  },
+  {
+    "id": "Cls01-004",
+    "source_file": "Cls01.md",
+    "title": "第4题",
+    "question": "使用两种不同的 MATLAB 函数计算积分\n\n\\[\n\\int_1^{1.5}\\int_{1.4}^{2}(x^2+2y)\\,dx\\,dy\n\\]",
+    "answer": "format long\n\n% dblquad\nf1 = @(x,y) x.^2 + 2*y;\nI1 = dblquad(f1, 1.4, 2, 1, 1.5);\n\nfprintf('Use dblquad, the result is: %.12f\\n\\n', I1);\n\n% 符号积分\nsyms x y\nf2 = x^2 + 2*y;\n\nI2 = int(int(f2, x, 1.4, 2), y, 1, 1.5);\nI2 = double(I2);\n\nfprintf('Use int, the result is: %.12f\\n\\n', I2);"
+  },
+  {
+    "id": "Cls01-005",
+    "source_file": "Cls01.md",
+    "title": "第5题",
+    "question": "写出计算人造卫星轨道长度的脚本文件。",
+    "answer": "format long\n\nr = 6371;\ns1 = 439;\ns2 = 2384;\n\nrp = r + s1;\nra = r + s2;\n\na = (rp + ra)/2;\nc = (ra - rp)/2;\nb = sqrt(a^2 - c^2);\n\nsyms t\nxt = a*cos(t);\nyt = b*sin(t);\n\ndx = diff(xt, t);\ndy = diff(yt, t);\n\nft = sqrt(dx^2 + dy^2);\n\nn = 1000;\nt0 = 0;\nt1 = 2*pi;\nh = (t1 - t0)/n;\n\nL = 0;\n\nfor i = 1:n\n    tj = t0 + (i-1)*h;\n    ti = t0 + i*h;\n\n    ftj = subs(ft, t, tj);\n    fti = subs(ft, t, ti);\n\n    L = L + (ftj + fti)*h/2;\nend\n\nL = double(L);\n\nfprintf('a = %.12f\\n', a);\nfprintf('b = %.12f\\n', b);\nfprintf('The orbit length is about: %.12f km\\n', L);"
+  },
+  {
+    "id": "Cls01-006",
+    "source_file": "Cls01.md",
+    "title": "第6题",
+    "question": "如下图所示地图边界测量数据如下（单位：mm）：\n\n- x方向为东西方向\n- y方向为南北方向\n- 比例尺：18 mm 对应 40 km\n\n根据给定边界点数据计算该国国土面积近似值，并与精确值\n\n\\[\n41288\\ \\text{km}^2\n\\]\n\n进行比较。",
+    "answer": "format long\n\nx = [7.0 10.5 13.0 17.5 34.0 40.5 44.5 48.0 56.0 61.0 ...\n     68.5 76.5 80.5 91.0 96.0 101.0 104.0 106.5 111.5 ...\n     118.0 123.5 136.5 142.0 146.0 150.0 157.0 158.0];\n\ny1 = [44 45 47 50 50 38 30 30 34 36 34 41 45 46 ...\n      43 37 33 28 32 65 55 54 52 50 66 66 68];\n\ny2 = [44 59 70 72 93 100 110 110 110 117 118 116 118 118 ...\n      121 124 121 121 121 122 116 83 81 82 86 85 68];\n\ny = y2 - y1;\n\nSmap = 0;\n\nfor i = 1:length(x)-1\n    hk = x(i+1) - x(i);\n    Smap = Smap + (y(i) + y(i+1))*hk/2;\nend\n\nSmap = double(Smap);\n\nscale = 40/18;\nSreal = Smap * scale^2;\n\nStrue = 41288;\n\nabserr = abs(Sreal - Strue);\nrelerr = abs((Sreal - Strue)/Strue);\n\nfprintf('The area on the map is about: %.12f mm^2\\n\\n', Smap);\nfprintf('The real area is about: %.12f km^2\\n\\n', Sreal);\nfprintf('The exact area is: %.12f km^2\\n\\n', Strue);\nfprintf('The absolute error is: %.12f km^2\\n\\n', abserr);\nfprintf('The relative error is: %.12e\\n\\n', relerr);"
+  },
+  {
+    "id": "Cls02-007",
+    "source_file": "Cls02.md",
+    "title": "第1题",
+    "question": "利用 Euler 折线法编程求解如下初值问题\n\n\\[\ny'=1+y,\\qquad y(0)=1\n\\]\n\n其中\n\n\\[\nx_0=0,\\quad h=0.5,\\quad 0\\le x\\le 2\n\\]\n\n并画出该解与精确解的对比图像。",
+    "answer": "clear;\nsyms x y\n\nf = 1 + y;\na = 0;\nb = 2;\nh = 0.5;\nn = (b-a)/h;\n\nx = 0;\ny = 1;\nszj = [x,y];\n\nfor i = 1:n\n    y = y + h*double(subs(f, {'x','y'}, {x,y}));\n    x = x + h;\n    szj = [szj; x,y];\nend\n\nxx = a:0.01:b;\nyy = 2*exp(xx) - 1;\n\nplot(szj(:,1), szj(:,2), 'or-','LineWidth',1.2);\nhold on;\nplot(xx, yy, 'b-','LineWidth',1.5);\ngrid on;\nlegend('Euler数值解','精确解');\ntitle('题1：Euler法与精确解比较');\nxlabel('x');\nylabel('y');"
+  },
+  {
+    "id": "Cls02-008",
+    "source_file": "Cls02.md",
+    "title": "第2题",
+    "question": "将第1题中的步长缩短，取\n\n\\[\nh=0.1\n\\]\n\n观察步长变化对数值解精度的影响。",
+    "answer": "clear;\nsyms x y\n\nf = 1 + y;\na = 0;\nb = 2;\nh = 0.1;\nn = (b-a)/h;\n\nx = 0;\ny = 1;\nszj = [x,y];\n\nfor i = 1:n\n    y = y + h*double(subs(f, {'x','y'}, {x,y}));\n    x = x + h;\n    szj = [szj; x,y];\nend\n\nxx = a:0.01:b;\nyy = 2*exp(xx) - 1;\n\nplot(szj(:,1), szj(:,2), 'or-','LineWidth',1.1);\nhold on;\nplot(xx, yy, 'b-','LineWidth',1.5);\ngrid on;\nlegend('Euler数值解(h=0.1)','精确解');\ntitle('题2：步长缩短后 Euler 法与精确解比较');\nxlabel('x');\nylabel('y');\n\ny_exact_2 = 2*exp(2) - 1;\nerr = abs(szj(end,2) - y_exact_2);\n\ndisp('x=2 处的绝对误差为：');\ndisp(err);"
+  },
+  {
+    "id": "Cls02-009",
+    "source_file": "Cls02.md",
+    "title": "第3题",
+    "question": "分别利用 Euler 折线法和 Runge-Kutta（龙格-库塔）方法求解初值问题\n\n\\[\n\\begin{cases}\ny'=y+2x,\\\\\ny(0)=1,\n\\end{cases}\n\\qquad 0\\le x\\le 1\n\\]\n\n并与精确解进行比较，观察 Euler 法和 Runge-Kutta 法的精度差异。",
+    "answer": "clear;\nsyms x y\n\nf = y + 2*x;\na = 0;\nb = 1;\nn = 10;\nh = (b-a)/n;\n\nx1 = 0;\ny1 = 1;\nszj1 = [x1,y1];\n\nfor i = 1:n\n    y1 = y1 + h*double(subs(f, {'x','y'}, {x1,y1}));\n    x1 = x1 + h;\n    szj1 = [szj1; x1,y1];\nend\n\nx2 = 0;\ny2 = 1;\nszj2 = [x2,y2];\n\nfor i = 1:n\n    l1 = subs(f, {'x','y'}, {x2,y2});\n    l2 = subs(f, {'x','y'}, {x2+h/2, y2+double(l1)*h/2});\n    l3 = subs(f, {'x','y'}, {x2+h/2, y2+double(l2)*h/2});\n    l4 = subs(f, {'x','y'}, {x2+h, y2+double(l3)*h});\n\n    y2 = y2 + h*double(l1 + 2*l2 + 2*l3 + l4)/6;\n    x2 = x2 + h;\n    szj2 = [szj2; x2,y2];\nend\n\nxx = a:0.01:b;\nyy = 3*exp(xx) - 2*xx - 2;\n\nplot(szj1(:,1), szj1(:,2), 'or-','LineWidth',1.1);\nhold on;\nplot(szj2(:,1), szj2(:,2), 'dg-','LineWidth',1.1);\nplot(xx, yy, 'b-','LineWidth',1.5);\ngrid on;\nlegend('Euler法','Runge-Kutta法','精确解');\ntitle('题3：Euler法、Runge-Kutta法与精确解比较');\nxlabel('x');\nylabel('y');\n\ny_exact_1 = 3*exp(1) - 4;\nerr1 = abs(szj1(end,2) - y_exact_1);\nerr2 = abs(szj2(end,2) - y_exact_1);\n\ndisp('Euler法在 x=1 处的绝对误差：');\ndisp(err1);\ndisp('Runge-Kutta法在 x=1 处的绝对误差：');\ndisp(err2);"
+  },
+  {
+    "id": "Cls02-010",
+    "source_file": "Cls02.md",
+    "title": "第4题",
+    "question": "利用 MATLAB 函数求以下问题的解析解与数值近似解：\n\n### (1)\n\n\\[\ny''-2y'+5y=e^x\\cos 2x\n\\]\n\n### (2)\n\n\\[\n\\begin{cases}\n\\dfrac{dx}{dt}+x+2y=e^t\\\\\n\\dfrac{dy}{dt}-x-y=0\n\\end{cases}\n\\]\n\n初值条件：\n\n\\[\nx(0)=1,\\qquad y(0)=0\n\\]\n\n### (3)\n\n\\[\ny'=1+5y,\\qquad y(0)=1\n\\]\n\n在区间 \\([0,1]\\) 上求数值近似解。\n\n### (4)\n\n\\[\ny''-(1-y^2)y'+y=0\n\\]\n\n初值条件：\n\n\\[\ny(0)=0,\\qquad y'(0)=-0.5\n\\]\n\n在区间 \\([0,20]\\) 上求数值近似解。",
+    "answer": "clear;\nsyms y(x)\n\nDy = diff(y,x);\nD2y = diff(y,x,2);\n\neq = D2y - 2*Dy + 5*y == exp(x)*cos(2*x);\ny_general = dsolve(eq);\n\ndisp('方程(1)的通解为：');\ndisp(simplify(y_general));\n\nclear;\nsyms x(t) y(t)\n\neq1 = diff(x,t) + x + 2*y == exp(t);\neq2 = diff(y,t) - x - y == 0;\n\ncond1 = x(0) == 1;\ncond2 = y(0) == 0;\n\n[xs, ys] = dsolve(eq1, eq2, cond1, cond2);\n\ndisp('方程组(2)的解 x(t) 为：');\ndisp(simplify(xs));\n\ndisp('方程组(2)的解 y(t) 为：');\ndisp(simplify(ys));\n\nclear;\n\nfun = @(t,y) 1 + 5*y;\n[t,y] = ode45(fun,[0,1],1);\n\nplot(t,y,'r.-','LineWidth',1.2,'MarkerSize',12);\ngrid on;\ntitle('题4(3)：ode45求数值近似解');\nxlabel('t');\nylabel('y');\n\nclear;\n\nf = @(t,y)[y(2);\n           (1-y(1)^2)*y(2)-y(1)];\n\n[t,y] = ode45(f,[0,20],[0,-0.5]);\n\nplot(t,y(:,1),'r-','LineWidth',1.2);\ngrid on;\ntitle('题4(4)：y(x) 的数值近似解');\nxlabel('x');\nylabel('y');\n\nfigure;\nplot(y(:,1),y(:,2),'b-','LineWidth',1.2);\ngrid on;\ntitle('题4(4)：相轨线');\nxlabel('y');\nylabel('y''');"
+  },
+  {
+    "id": "Cls02-011",
+    "source_file": "Cls02.md",
+    "title": "第5题",
+    "question": "一个慢跑者在平面上沿椭圆跑步，其轨迹为\n\n\\[\nx=10+20\\cos t,\\qquad y=20+15\\sin t\n\\]\n\n一只狗从原点出发，以恒定速度\n\n\\[\nw=20\n\\]\n\n追赶慢跑者，并且狗的运动方向始终指向慢跑者。\n\n利用参数方程给出狗的运动轨迹。",
+    "answer": "clear;\n\nw = 20;\n\nf = @(t,z)[ ...\n    w*((10+20*cos(t))-z(1)) / ...\n    sqrt(((10+20*cos(t))-z(1))^2 + ((20+15*sin(t))-z(2))^2);\n\n    w*((20+15*sin(t))-z(2)) / ...\n    sqrt(((10+20*cos(t))-z(1))^2 + ((20+15*sin(t))-z(2))^2) ];\n\n[t,z] = ode45(f,[0,10],[0,0]);\n\ntt = 0:0.01:10;\nxr = 10 + 20*cos(tt);\nyr = 20 + 15*sin(tt);\n\nplot(xr,yr,'b-','LineWidth',1.2);\nhold on;\nplot(z(:,1),z(:,2),'r-','LineWidth',1.2);\nplot(0,0,'ko','MarkerFaceColor','k');\n\ngrid on;\naxis equal;\nlegend('慢跑者轨迹','狗的轨迹','狗的出发点');\ntitle('题5：w=20时狗的运动轨迹');\nxlabel('x');\nylabel('y');"
+  },
+  {
+    "id": "Cls03-012",
+    "source_file": "Cls03.md",
+    "title": "第1题",
+    "question": "求解如下线性规划问题：\n\n\\[\n\\begin{cases}\n\\min f(x)=6x_1+12x_2,\\\\\nx_1+3x_2\\ge 7,\\\\\n3x_1-x_2\\le 4,\\\\\nx_1,x_2\\ge 0.\n\\end{cases}\n\\]",
+    "answer": "clc; clear;\n\nc = [6; 12];\n\nA = [-1 -3;\n      3 -1];\nb = [-7; 4];\n\nAeq = [];\nbeq = [];\n\nlb = [0; 0];\nub = [];\n\n[x, fval] = linprog(c, A, b, Aeq, beq, lb, ub);\n\ndisp('最优解 x = ');\ndisp(x);\ndisp('最优值 fval = ');\ndisp(fval);"
+  },
+  {
+    "id": "Cls03-013",
+    "source_file": "Cls03.md",
+    "title": "第2题",
+    "question": "求函数\n\n\\[\nf(x)=x^2\\sin x\n\\]\n\n在区间 \\([-10,10]\\) 内的极大值点和极小值点，并通过函数图像体会局部极小值的含义。",
+    "answer": "clc; clear; close all;\n\nf = @(x) x.^2 .* sin(x);\n\nfplot(f, [-10, 10], 'LineWidth', 1.5);\ngrid on;\nxlabel('x');\nylabel('f(x)');\ntitle('f(x) = x^2 sin(x) 在 [-10,10] 上的图像');\nhold on;\n\n[xmin, fmin] = fminbnd(f, -10, 10);\n\n[xmax, yval] = fminbnd(@(x) -f(x), -10, 10);\nfmax = -yval;\n\nplot(xmin, fmin, 'ro', 'MarkerSize', 8, 'LineWidth', 1.5);\nplot(xmax, fmax, 'bo', 'MarkerSize', 8, 'LineWidth', 1.5);\n\nlegend('f(x)', '极小值点', '极大值点');\n\ndisp('全局极小值点 xmin = ');\ndisp(xmin);\ndisp('对应函数值 fmin = ');\ndisp(fmin);\n\ndisp('全局极大值点 xmax = ');\ndisp(xmax);\ndisp('对应函数值 fmax = ');\ndisp(fmax);"
+  },
+  {
+    "id": "Cls03-014",
+    "source_file": "Cls03.md",
+    "title": "第3题",
+    "question": "求解无约束优化问题：\n\n\\[\n\\min f(x)=\n(4x_1^2+2x_2^2+4x_1x_2+2x_2+1)e^{x_1}.\n\\]",
+    "answer": "clc; clear;\n\nfun = @(x) (4*x(1)^2 + 2*x(2)^2 + 4*x(1)*x(2) + 2*x(2) + 1) * exp(x(1));\n\nx0 = [-1; 1];\n\n[x, fval] = fminunc(fun, x0);\n\ndisp('最优解 x = ');\ndisp(x);\ndisp('最优值 fval = ');\ndisp(fval);"
+  },
+  {
+    "id": "Cls03-015",
+    "source_file": "Cls03.md",
+    "title": "第4题",
+    "question": "求解如下约束优化问题：\n\n\\[\n\\begin{cases}\n\\min f(x)=-x_1x_2x_3,\\\\\n0\\le x_1+2x_2+3x_3\\le 72,\n\\end{cases}\n\\]\n\n初始点为\n\n\\[\n[10,10,10].\n\\]",
+    "answer": "clc; clear;\n\nfun = @(x) -x(1)*x(2)*x(3);\n\nx0 = [10; 10; 10];\n\nA = [1 2 3];\nb = 72;\n\nAeq = [];\nbeq = [];\n\nlb = [0; 0; 0];\nub = [];\n\n[x, fval] = fmincon(fun, x0, A, b, Aeq, beq, lb, ub);\n\ndisp('最优解 x = ');\ndisp(x);\ndisp('最优值 fval = ');\ndisp(fval);"
+  },
+  {
+    "id": "Cls03-016",
+    "source_file": "Cls03.md",
+    "title": "第5题",
+    "question": "求解指派问题例题。",
+    "answer": "clc; clear;\n\nC = [3  8  2 10  3;\n     8  7  2  9  7;\n     6  4  2  7  5;\n     8  4  2  3  5;\n     9 10  6  9 10];\n\nc = C(:);\n\nintcon = 1:25;\n\nAeq1 = zeros(5,25);\nfor i = 1:5\n    Aeq1(i, (i-1)*5+1 : i*5) = 1;\nend\n\nAeq2 = zeros(5,25);\nfor j = 1:5\n    for i = 1:5\n        Aeq2(j, (i-1)*5+j) = 1;\n    end\nend\n\nAeq = [Aeq1; Aeq2];\nbeq = ones(10,1);\n\nA = [];\nb = [];\n\nlb = zeros(25,1);\nub = ones(25,1);\n\n[x, fval] = intlinprog(c, intcon, A, b, Aeq, beq, lb, ub);\n\nX = reshape(round(x), 5, 5);\n\ndisp('指派矩阵 X = ');\ndisp(X);\ndisp('最小总时间 = ');\ndisp(fval);\n\ndisp('具体安排如下：');\nfor i = 1:5\n    j = find(X(i,:) == 1);\n    fprintf('人员%d -> 任务%d\\n', i, j);\nend"
+  },
+  {
+    "id": "Cls03-017",
+    "source_file": "Cls03.md",
+    "title": "第6题",
+    "question": "写出供应与选址问题最后一个模型的 MATLAB 文件 `xuanzhif3.m` 和调用程序。",
+    "answer": "clc; clear;\n\nx0 = [1;1;1;1;1;1; 2;2; 6;6];\n\nA = [ 1 1 1 1 1 1 0 0 0 0;\n     -1 -1 -1 -1 -1 -1 0 0 0 0];\nb = [20; -16];\n\nAeq = [];\nbeq = [];\n\nlb = [0;0;0;0;0;0; 0;0;0;0];\n\nub = [3;5;4;7;6;11; inf;inf;inf;inf];\n\n[x, fval] = fmincon(@xuanzhif3, x0, A, b, Aeq, beq, lb, ub);\n\ndisp('最优解 x = ');\ndisp(x);\n\ndisp('最小吨公里数 = ');\ndisp(fval);\n\ndisp('1号料场位置 (s1,t1) = ');\ndisp([x(7), x(8)]);\n\ndisp('2号料场位置 (s2,t2) = ');\ndisp([x(9), x(10)]);\n\nd = [3 5 4 7 6 11];\n\ndisp('1号料场供给量 = ');\ndisp(x(1:6)');\n\ndisp('2号料场供给量 = ');\ndisp((d - x(1:6)') );\n\nfunction f = xuanzhif3(x)\n\na = [1.25, 8.75, 0.50, 5.75, 3.00, 7.25];\nb = [1.25, 0.75, 4.75, 5.00, 6.50, 7.75];\n\nd = [3, 5, 4, 7, 6, 11];\n\nf = 0;\n\nfor i = 1:6\n    dist1 = sqrt((x(7) - a(i))^2 + (x(8) - b(i))^2);\n    dist2 = sqrt((x(9) - a(i))^2 + (x(10) - b(i))^2);\n\n    f = f + x(i)*dist1 + (d(i)-x(i))*dist2;\nend\n\nend"
+  },
+  {
+    "id": "Cls03-018",
+    "source_file": "Cls03.md",
+    "title": "第7题",
+    "question": "黄金分割法也称 0.618 法。根据给定算法步骤写出算法程序，并任选一个一元函数利用该程序求极值。",
+    "answer": "clc; clear; close all;\n\nfun = @(x) x.^2 - 4*x + 5;\n\na = 0;\nb = 5;\ntol = 1e-6;\nmaxit = 200;\n\n[xopt, fopt, k] = gold618(fun, a, b, tol, maxit);\n\nfprintf('最优点 x = %.8f\\n', xopt);\nfprintf('最优值 f(x) = %.8f\\n', fopt);\nfprintf('迭代次数 k = %d\\n', k);\n\nfplot(fun, [a,b], 'LineWidth', 1.5);\ngrid on; hold on;\nplot(xopt, fopt, 'ro', 'MarkerSize', 8, 'LineWidth', 1.5);\ntitle('黄金分割法求极小值');\nxlabel('x');\nylabel('f(x)');\n\nfunction [xopt, fopt, k] = gold618(fun, a, b, tol, maxit)\n\nr = (sqrt(5) - 1) / 2;\n\nx1 = b - r*(b-a);\nx2 = a + r*(b-a);\nf1 = fun(x1);\nf2 = fun(x2);\n\nk = 0;\nwhile (b-a > tol) && (k < maxit)\n    if f1 > f2\n        a = x1;\n        x1 = x2;\n        f1 = f2;\n        x2 = a + r*(b-a);\n        f2 = fun(x2);\n    else\n        b = x2;\n        x2 = x1;\n        f2 = f1;\n        x1 = b - r*(b-a);\n        f1 = fun(x1);\n    end\n    k = k + 1;\nend\n\nxopt = (a+b)/2;\nfopt = fun(xopt);\n\nend"
+  },
+  {
+    "id": "Cls04-019",
+    "source_file": "Cls04.md",
+    "title": "第1题",
+    "question": "### (1)\n\n在同一图形窗口中画出\n\n\\[\nN(0,1),\\quad N(0,4)\n\\]\n\n的分布函数图。\n\n### (2)\n\n在同一图形上画出\n\n\\[\n\\chi^2(5),\\quad \\chi^2(8)\n\\]\n\n的密度函数图像。",
+    "answer": "clear; clc; close all;\n\nx = -6:0.01:6;\n\nF1 = normcdf(x, 0, 1);\nF2 = normcdf(x, 0, 2);\n\nplot(x, F1, 'b', 'LineWidth', 1.5);\nhold on;\nplot(x, F2, 'r', 'LineWidth', 1.5);\ngrid on;\n\nlegend('N(0,1)', 'N(0,4)', 'Location', 'best');\ntitle('N(0,1)与N(0,4)的分布函数图');\nxlabel('x');\nylabel('F(x)');\nhold off;\n\nclear; clc; close all;\n\nx = 0:0.01:25;\n\ny1 = chi2pdf(x, 5);\ny2 = chi2pdf(x, 8);\n\nplot(x, y1, 'b', 'LineWidth', 1.5);\nhold on;\nplot(x, y2, 'r', 'LineWidth', 1.5);\ngrid on;\n\nlegend('\\chi^2(5)', '\\chi^2(8)', 'Location', 'best');\ntitle('\\chi^2(5)与\\chi^2(8)的密度函数图');\nxlabel('x');\nylabel('p(x)');\nhold off;"
+  },
+  {
+    "id": "Cls04-020",
+    "source_file": "Cls04.md",
+    "title": "第2题",
+    "question": "某班概率统计课程的考试成绩如下：\n\n\\[\n\\begin{aligned}\n&93,75,83,93,91,85,84,82,77,76,77,95,94,89,91,88,86,83,96,81,79,97,\\\\\n&78,75,67,69,68,84,83,81,75,66,85,70,94,84,83,82,80,78,74,73,76,70,\\\\\n&86,76,90,89,71,66,86,73,80,94,79,78,77,63,53,55.\n\\end{aligned}\n\\]\n\n作直方图并附加其核密度估计曲线，计算均值、标准差、极差、偏度、峰度。",
+    "answer": "clear; clc; close all;\n\nX = [93 75 83 93 91 85 84 82 77 76 77 95 94 89 91 88 86 83 96 81 79 97 ...\n     78 75 67 69 68 84 83 81 75 66 85 70 94 84 83 82 80 78 74 73 76 70 ...\n     86 76 90 89 71 66 86 73 80 94 79 78 77 63 53 55];\n\nhistogram(X, 'Normalization', 'pdf', 'NumBins', 8);\nhold on;\n\n[f, xi] = ksdensity(X);\nplot(xi, f, 'r', 'LineWidth', 1.5);\n\ngrid on;\ntitle('考试成绩直方图及核密度估计曲线');\nxlabel('成绩');\nylabel('概率密度');\nlegend('直方图', '核密度估计', 'Location', 'best');\nhold off;\n\nx_mean = mean(X)\nx_std  = std(X)\nx_range = range(X)\nx_skew = skewness(X)\nx_kurt = kurtosis(X)"
+  },
+  {
+    "id": "Cls04-021",
+    "source_file": "Cls04.md",
+    "title": "第3题",
+    "question": "编写一个函数寻找二项分布的概率最大项。函数输入参数为二项分布参数 \\(n\\) 和 \\(p\\)，输出结果显示为：\n\n“二项分布 \\(B(n,p)\\) 的概率最大项为第？项，概率值为？。”",
+    "answer": "clear; clc;\n\nbinom_max_item(10, 0.3)\n\nfunction binom_max_item(n, p)\n\nk = 0:n;\nprob = binopdf(k, n, p);\n\n[maxProb, idx] = max(prob);\nmaxItem = k(idx);\n\nfprintf('二项分布 B(%d, %.4f) 的概率最大项为第 %d 项，概率值为 %.6f。\\n', ...\n        n, p, maxItem, maxProb);\nend"
+  },
+  {
+    "id": "Cls04-022",
+    "source_file": "Cls04.md",
+    "title": "第4题",
+    "question": "设随机变量 \\(X\\) 的分布函数为\n\n\\[\nF(x)=\n\\begin{cases}\n0, & x<0,\\\\\n\\dfrac{x^2}{4}, & 0\\le x<2,\\\\\n1, & x\\ge 2.\n\\end{cases}\n\\]\n\n试用 MATLAB 编写函数，分别计算该随机变量在 \\(x\\) 点处的分布函数值和密度函数值。函数的输入参数为 \\(x\\)，输出参数为 \\(f\\)，函数名分别为 `Xcdf` 和 `Xpdf`，其中 \\(x\\) 可以是向量。",
+    "answer": "clear; clc;\n\nx = [-1 0 0.5 1 1.5 2 3];\n\nF = Xcdf(x)\nP = Xpdf(x)\n\nfunction f = Xcdf(x)\n\nf = zeros(size(x));\n\nf(x < 0) = 0;\nf(x >= 0 & x < 2) = x(x >= 0 & x < 2).^2 / 4;\nf(x >= 2) = 1;\n\nend\n\nfunction f = Xpdf(x)\n\nf = zeros(size(x));\n\nf(x >= 0 & x < 2) = x(x >= 0 & x < 2) / 2;\nf(x < 0 | x >= 2) = 0;\n\nend"
+  },
+  {
+    "id": "Cls04-023",
+    "source_file": "Cls04.md",
+    "title": "第5题",
+    "question": "设二维随机变量 \\((X,Y)\\) 服从二维正态分布，均值向量为\n\n\\[\n\\mu=[0,0]\n\\]\n\n协方差矩阵为\n\n\\[\n\\Sigma=\n\\begin{pmatrix}\n1 & 1\\\\\n1 & 3\n\\end{pmatrix}.\n\\]\n\n分别画出 \\((X,Y)\\) 的联合分布函数及联合概率密度图形。",
+    "answer": "clear; clc; close all;\n\nmu = [0 0];\nSigma = [1 1; 1 3];\n\n[X, Y] = meshgrid(-4:0.1:4, -6:0.1:6);\nxy = [X(:), Y(:)];\n\npdf_val = mvnpdf(xy, mu, Sigma);\nPDF = reshape(pdf_val, size(X));\n\nfigure;\nsurf(X, Y, PDF);\nshading interp;\ngrid on;\ntitle('二维正态分布的联合概率密度图');\nxlabel('x');\nylabel('y');\nzlabel('f(x,y)');\n\ncdf_val = mvncdf(xy, mu, Sigma);\nCDF = reshape(cdf_val, size(X));\n\nfigure;\nsurf(X, Y, CDF);\nshading interp;\ngrid on;\ntitle('二维正态分布的联合分布函数图');\nxlabel('x');\nylabel('y');\nzlabel('F(x,y)');"
+  },
+  {
+    "id": "Cls04-024",
+    "source_file": "Cls04.md",
+    "title": "第6题",
+    "question": "在路灯更换问题中，考虑没坏的灯泡还有回收价值，建立相应的数学模型并求出更换周期的表达式。\n\n灯泡寿命服从正态分布\n\n\\[\nN(4000,100^2),\n\\]\n\n其中\n\n\\[\n\\mu=4000,\\qquad \\sigma=100.\n\\]\n\n每个灯泡的安装价格是 70 元，管理部门对不亮灯泡的惩罚费用为 \\(0.02\\) 元/h，每个未坏灯泡的回收价为 5 元，计算最佳更换周期。",
+    "answer": "clear; clc; close all;\n\nmu = 4000;\nsigma = 100;\na = 70;\nb = 0.02;\nc = 5;\n\ncostfun = @(T) ( a - c*(1 - normcdf(T, mu, sigma)) + ...\n    b * integral(@(x) (T - x).*normpdf(x, mu, sigma), -Inf, T) ) ./ T;\n\n[T_opt, minCost] = fminbnd(costfun, 3500, 4500);\n\nfprintf('最佳更换周期 T = %.4f 小时\\n', T_opt);\nfprintf('对应的最小单位时间平均成本 = %.6f 元/小时\\n', minCost);\n\nT = 3500:1:4500;\nG = arrayfun(costfun, T);\n\nfigure;\nplot(T, G, 'LineWidth', 1.5);\ngrid on;\nhold on;\nplot(T_opt, minCost, 'ro', 'MarkerSize', 8, 'LineWidth', 1.5);\ntitle('考虑回收价值时的单位时间平均成本函数');\nxlabel('更换周期 T（小时）');\nylabel('单位时间平均成本');\nlegend('G(T)', '最优点', 'Location', 'best');\nhold off;"
+  },
+  {
+    "id": "Cls05-025",
+    "source_file": "Cls05.md",
+    "title": "第1题",
+    "question": "用蒙特卡洛方法计算下列函数在给定区间上的积分，并改变随机点数目观察对结果的影响。\n\n### (1)\n\n\\[\ny=e^{3x}\\sin 2x,\\qquad 0\\le x\\le 2\n\\]\n\n### (2)\n\n\\[\ny=\\frac{1}{\\sqrt{2\\pi}}e^{-x^2/2},\\qquad -2\\le x\\le 2\n\\]",
+    "answer": "clear; clc;\n\nf = @(x) sin(x.^2);\na = 0;\nb = 2;\n\nNlist = [100, 500, 1000, 5000, 10000, 50000];\nI_mc = zeros(size(Nlist));\n\nfor k = 1:length(Nlist)\n    n = Nlist(k);\n    x = a + (b-a) * rand(1, n);\n    I_mc(k) = (b-a) * mean(f(x));\nend\n\nI_true = integral(f, a, b);\n\nfprintf('理论参考值 = %.8f\\n\\n', I_true);\n\nfor k = 1:length(Nlist)\n    fprintf('n = %-6d  Monte Carlo估计 = %.8f  误差 = %.8e\\n', ...\n        Nlist(k), I_mc(k), abs(I_mc(k) - I_true));\nend\n\nfigure;\nplot(Nlist, I_mc, 'o-', 'LineWidth', 1.5);\nhold on;\nyline(I_true, 'r--', 'LineWidth', 1.5);\nxlabel('随机点数 n');\nylabel('积分估计值');\ntitle('\\int_0^2 sin(x^2) dx 的蒙特卡洛估计');\nlegend('Monte Carlo估计', '参考值');\ngrid on;\n\nclear; clc;\n\nf = @(x) exp(-x.^2 / 2);\na = -2;\nb = 2;\n\nNlist = [100, 500, 1000, 5000, 10000, 50000];\nI_mc = zeros(size(Nlist));\n\nfor k = 1:length(Nlist)\n    n = Nlist(k);\n    x = a + (b-a) * rand(1, n);\n    I_mc(k) = (b-a) * mean(f(x));\nend\n\nI_true = integral(f, a, b);\n\nfprintf('理论参考值 = %.8f\\n\\n', I_true);\n\nfor k = 1:length(Nlist)\n    fprintf('n = %-6d  Monte Carlo估计 = %.8f  误差 = %.8e\\n', ...\n        Nlist(k), I_mc(k), abs(I_mc(k) - I_true));\nend\n\nfigure;\nplot(Nlist, I_mc, 'o-', 'LineWidth', 1.5);\nhold on;\nyline(I_true, 'r--', 'LineWidth', 1.5);\nxlabel('随机点数 n');\nylabel('积分估计值');\ntitle('\\int_{-2}^2 e^{-x^2/2} dx 的蒙特卡洛估计');\nlegend('Monte Carlo估计', '参考值');\ngrid on;"
+  },
+  {
+    "id": "Cls05-026",
+    "source_file": "Cls05.md",
+    "title": "第2题",
+    "question": "冰淇淋的下部为锥体，上部为半球。设它由锥面\n\n\\[\nz=\\sqrt{x^2+y^2}\n\\]\n\n和半球面\n\n\\[\nx^2+y^2+(z-1)^2=1\n\\]\n\n组成，用蒙特卡洛方法计算它的体积。",
+    "answer": "clear; clc;\n\nn = 2e5;\n\nxmin = -1; xmax = 1;\nymin = -1; ymax = 1;\nzmin = 0;  zmax = sqrt(2);\n\nx = xmin + (xmax - xmin) * rand(1, n);\ny = ymin + (ymax - ymin) * rand(1, n);\nz = zmin + (zmax - zmin) * rand(1, n);\n\nr = sqrt(x.^2 + y.^2);\n\nin_cone = (z >= 0) & (z <= 1) & (r <= z);\nin_hemi = (z >= 1) & (z <= sqrt(2)) & (x.^2 + y.^2 + z.^2 <= 2);\n\ninside = in_cone | in_hemi;\n\nV_box = (xmax-xmin) * (ymax-ymin) * (zmax-zmin);\nV_mc = V_box * mean(inside);\n\nV_true = pi/3 + integral(@(z) pi*(2-z.^2), 1, sqrt(2));\n\nfprintf('Monte Carlo估计体积 = %.8f\\n', V_mc);\nfprintf('理论参考体积       = %.8f\\n', V_true);\nfprintf('绝对误差           = %.8e\\n', abs(V_mc - V_true));"
+  },
+  {
+    "id": "Cls05-027",
+    "source_file": "Cls05.md",
+    "title": "第3题",
+    "question": "设炮弹射击的目标为半径为 \\(100m\\) 的圆形区域，弹着点以圆心为中心服从二维正态分布。两个分量的标准差分别为 \\(80m\\) 和 \\(50m\\)，相关系数为 \\(0.4\\)。用蒙特卡洛方法求炮弹命中圆形区域的概率。",
+    "answer": "clear; clc;\n\nn = 2e5;\n\nmu = [0, 0];\nsigma_x = 80;\nsigma_y = 50;\nrho = 0.4;\n\nSigma = [sigma_x^2, rho*sigma_x*sigma_y;\n         rho*sigma_x*sigma_y, sigma_y^2];\n\nXY = mvnrnd(mu, Sigma, n);\nx = XY(:,1);\ny = XY(:,2);\n\nR = 100;\nhit = (x.^2 + y.^2 <= R^2);\n\nP_mc = mean(hit);\n\nfprintf('Monte Carlo估计命中概率 = %.8f\\n', P_mc);"
+  },
+  {
+    "id": "Cls05-028",
+    "source_file": "Cls05.md",
+    "title": "第4题",
+    "question": "在一场舞会开始时，舞池中有 20 个女孩和 22 个男孩，舞池外还有无穷多等待入场的女孩和男孩。规则如下：\n\n- 每一轮中，若选出的是女孩，则邀请一位女孩和一位男孩入场跳三人舞，舞曲结束后三人均留在舞池内；\n- 若选出的是男孩，则邀请一位舞池中的女孩跳双人舞，曲子结束后双双离场；\n- 当舞池中只剩两个男孩时舞会结束。\n\n求舞会平均会进行多少轮才会终止，并用蒙特卡洛模拟法估计该均值。",
+    "answer": "clear; clc;\n\nNsim = 50000;\nrounds = zeros(Nsim, 1);\n\nfor s = 1:Nsim\n    girls = 20;\n    boys  = 22;\n    cnt = 0;\n\n    while ~(girls == 0 && boys == 2)\n        total = girls + boys;\n        u = rand;\n\n        if u < girls / total\n            girls = girls + 1;\n            boys  = boys + 1;\n        else\n            girls = girls - 1;\n            boys  = boys - 1;\n        end\n\n        cnt = cnt + 1;\n    end\n\n    rounds(s) = cnt;\nend\n\navg_rounds = mean(rounds);\n\nfprintf('Monte Carlo估计均值 = %.8f\\n', avg_rounds);\nfprintf('样本标准差         = %.8f\\n', std(rounds));"
+  },
+  {
+    "id": "Cls05-029",
+    "source_file": "Cls05.md",
+    "title": "第5题",
+    "question": "一列火车大约在下午 1 点离开 \\(A\\) 站，其离站时间分布为：\n\n| 离站时间 | 13:00 | 13:05 | 13:10 |\n|---|---|---|---|\n| 概率 | 0.7 | 0.2 | 0.1 |\n\n火车从 \\(A\\) 到 \\(B\\) 途中所需时间服从均值为 30 分、标准差为 2 分钟的正态分布。若要赶的是这趟火车的下一站 \\(B\\)，到达 \\(B\\) 站的时间分布为：\n\n| 时间 | 13:28 | 13:30 | 13:32 | 13:34 |\n|---|---|---|---|---|\n| 概率 | 0.3 | 0.4 | 0.2 | 0.1 |\n\n求能赶上这列火车的概率，并用随机模拟方法设计实验计算结果。",
+    "answer": "clear; clc;\n\nn = 2e5;\nsuccess = 0;\n\nfor i = 1:n\n    u1 = rand;\n\n    if u1 < 0.7\n        t1 = 0;\n    elseif u1 < 0.9\n        t1 = 5;\n    else\n        t1 = 10;\n    end\n\n    t2 = normrnd(30, 2);\n\n    u3 = rand;\n\n    if u3 < 0.3\n        t3 = 28;\n    elseif u3 < 0.7\n        t3 = 30;\n    elseif u3 < 0.9\n        t3 = 32;\n    else\n        t3 = 34;\n    end\n\n    if t3 < t1 + t2\n        success = success + 1;\n    end\nend\n\nP_mc = success / n;\n\nfprintf('Monte Carlo估计概率 = %.8f\\n', P_mc);"
+  },
+  {
+    "id": "Cls06-030",
+    "source_file": "Cls06.md",
+    "title": "第1题",
+    "question": "对两个月的汽油价格数据进行统计推断，包括均值假设检验、均值和标准差估计、均值差的区间估计。",
+    "answer": "clc; clear;\n\njan = [119 117 115 116 112 121 115 122 116 118 109 112 119 ...\n       112 117 113 114 109 109 118];\n\nfeb = [118 119 115 122 118 121 120 122 128 116 120 123 121 ...\n       119 117 119 128 126 118 125];\n\nalpha = 0.05;\n\n[h_jan,p_jan,ci_jan_test,stats_jan] = ttest(jan,115,alpha,0);\n[h_feb,p_feb,ci_feb_test,stats_feb] = ttest(feb,115,alpha,0);\n\ndisp(' (1) 均值假设检验');\nfprintf('1月: h = %d, p = %.6f, t统计量 = %.4f\\n', h_jan, p_jan, stats_jan.tstat);\nfprintf('2月: h = %d, p = %.6f, t统计量 = %.4f\\n', h_feb, p_feb, stats_feb.tstat);\n\n[mu_jan,sigma_jan,muci_jan,sigmaci_jan] = normfit(jan,alpha);\n[mu_feb,sigma_feb,muci_feb,sigmaci_feb] = normfit(feb,alpha);\n\ndisp(' ');\ndisp(' (2) 均值与标准差估计、均值置信区间');\nfprintf('1月均值点估计 = %.4f\\n', mu_jan);\nfprintf('1月均值95%%置信区间 = [%.4f, %.4f]\\n', muci_jan(1), muci_jan(2));\nfprintf('1月标准差点估计 = %.4f\\n', sigma_jan);\n\nfprintf('2月均值点估计 = %.4f\\n', mu_feb);\nfprintf('2月均值95%%置信区间 = [%.4f, %.4f]\\n', muci_feb(1), muci_feb(2));\nfprintf('2月标准差点估计 = %.4f\\n', sigma_feb);\n\n[h_diff,p_diff,ci_diff,stats_diff] = ttest2(jan,feb,alpha,0,'unequal');\n\ndisp(' ');\ndisp(' (3) 1月与2月均值差的区间估计');\nfprintf('均值差（1月-2月）的95%%置信区间 = [%.4f, %.4f]\\n', ci_diff(1), ci_diff(2));\nfprintf('对应检验: h = %d, p = %.6f, t统计量 = %.4f\\n', h_diff, p_diff, stats_diff.tstat);"
+  },
+  {
+    "id": "Cls06-031",
+    "source_file": "Cls06.md",
+    "title": "第2题",
+    "question": "设计实验验证：在正态总体假设下，对于给定的显著性水平 \\(\\alpha\\)，样本量 \\(n\\) 越大，均值 \\(\\mu\\) 的置信区间长度越小，估计精度越高。并对 \\(\\sigma^2\\) 的估计区间作类似验证。",
+    "answer": "clc; clear;\n\nalpha = 0.05;\nmu0 = 10;\nsigma0 = 2;\n\nnlist = 10:10:200;\nL_mu = zeros(size(nlist));\nL_sigma2 = zeros(size(nlist));\n\nrng(1);\n\nfor k = 1:length(nlist)\n    n = nlist(k);\n    x = normrnd(mu0,sigma0,n,1);\n\n    xb = mean(x);\n    s = std(x);\n\n    tval = tinv(1-alpha/2, n-1);\n    ci_mu = [xb - tval*s/sqrt(n), xb + tval*s/sqrt(n)];\n    L_mu(k) = ci_mu(2) - ci_mu(1);\n\n    s2 = var(x);\n    chi1 = chi2inv(alpha/2, n-1);\n    chi2 = chi2inv(1-alpha/2, n-1);\n    ci_sigma2 = [(n-1)*s2/chi2, (n-1)*s2/chi1];\n    L_sigma2(k) = ci_sigma2(2) - ci_sigma2(1);\nend\n\ndisp('   n       L_mu         L_sigma2');\ndisp([nlist(:), L_mu(:), L_sigma2(:)]);\n\nfigure;\nplot(nlist, L_mu, 'o-','LineWidth',1.5);\ngrid on;\nxlabel('样本容量 n');\nylabel('\\mu 的置信区间长度');\ntitle('\\mu 的置信区间长度随样本量变化');\n\nfigure;\nplot(nlist, L_sigma2, 's-','LineWidth',1.5);\ngrid on;\nxlabel('样本容量 n');\nylabel('\\sigma^2 的置信区间长度');\ntitle('\\sigma^2 的置信区间长度随样本量变化');"
+  },
+  {
+    "id": "Cls06-032",
+    "source_file": "Cls06.md",
+    "title": "第3题",
+    "question": "学校随机抽取 100 名学生，测量他们的身高和体重。\n\n要求：\n\n1. 对这些数据给出直观图形描述，检验分布的正态性；\n2. 根据这些数据对全校学生的平均身高和体重做出估计，并给出估计误差范围；\n3. 已知学校 10 年前学生平均身高为 \\(167.5\\text{cm}\\)，平均体重为 \\(60.2\\text{kg}\\)，根据本次调查数据判断学生平均身高和体重有无显著变化。",
+    "answer": "clc; clear; close all;\n\nheight = [...\n172 171 166 160 155 173 166 170 167 173 178 173 163 165 170 163 172 182 171 177 ...\n169 168 168 175 176 168 161 169 171 178 177 170 173 172 170 172 177 176 175 184 ...\n169 165 164 173 172 169 173 173 166 163 170 160 165 177 169 176 177 172 165 166 ...\n171 169 170 172 169 167 175 164 166 169 167 179 176 182 186 166 169 173 169 171 ...\n167 168 165 168 176 170 158 165 172 169 169 172 162 175 174 167 166 174 168 170];\n\nweight = [...\n75 62 62 55 57 58 55 63 53 60 60 73 47 66 60 50 57 63 59 64 ...\n55 67 65 67 64 50 49 63 61 64 66 58 67 59 62 59 58 68 68 70 ...\n64 52 59 74 69 52 57 61 70 57 56 65 58 66 63 60 67 56 56 49 ...\n65 62 58 64 58 72 76 59 63 54 54 62 63 69 77 76 72 59 65 71 ...\n47 65 64 57 57 57 51 62 53 66 58 50 52 75 66 63 50 64 62 59];\n\nalpha = 0.05;\n\nfigure;\nhistogram(height);\ngrid on;\ntitle('身高直方图');\nxlabel('身高/cm');\nylabel('频数');\n\nfigure;\nqqplot(height);\ngrid on;\ntitle('身高QQ图');\n\nfigure;\nhistogram(weight);\ngrid on;\ntitle('体重直方图');\nxlabel('体重/kg');\nylabel('频数');\n\nfigure;\nqqplot(weight);\ngrid on;\ntitle('体重QQ图');\n\n[h_h,p_h] = lillietest(height,alpha);\n[h_w,p_w] = lillietest(weight,alpha);\n\ndisp(' (1) 正态性检验');\nfprintf('身高: h = %d, p = %.6f\\n', h_h, p_h);\nfprintf('体重: h = %d, p = %.6f\\n', h_w, p_w);\n\n[mu_h,sigma_h,muci_h,sigmaci_h] = normfit(height,alpha);\n[mu_w,sigma_w,muci_w,sigmaci_w] = normfit(weight,alpha);\n\ndisp(' ');\ndisp(' (2) 参数估计');\nfprintf('身高均值点估计 = %.4f cm\\n', mu_h);\nfprintf('身高均值95%%置信区间 = [%.4f, %.4f] cm\\n', muci_h(1), muci_h(2));\nfprintf('身高标准差点估计 = %.4f\\n', sigma_h);\n\nfprintf('体重均值点估计 = %.4f kg\\n', mu_w);\nfprintf('体重均值95%%置信区间 = [%.4f, %.4f] kg\\n', muci_w(1), muci_w(2));\nfprintf('体重标准差点估计 = %.4f\\n', sigma_w);\n\nerr_h = (muci_h(2) - muci_h(1))/2;\nerr_w = (muci_w(2) - muci_w(1))/2;\n\nfprintf('身高估计误差范围 = ±%.4f cm\\n', err_h);\nfprintf('体重估计误差范围 = ±%.4f kg\\n', err_w);\n\nmu0_h = 167.5;\nmu0_w = 60.2;\n\n[hh,ph,cih,statsh] = ttest(height,mu0_h,alpha,0);\n[hw,pw,ciw,statsw] = ttest(weight,mu0_w,alpha,0);\n\ndisp(' ');\ndisp(' (3) 与10年前比较的假设检验');\n\nfprintf('身高检验: h = %d, p = %.6f, t统计量 = %.4f\\n', hh, ph, statsh.tstat);\nfprintf('身高均值差异对应95%%置信区间参考 = [%.4f, %.4f]\\n', cih(1), cih(2));\n\nfprintf('体重检验: h = %d, p = %.6f, t统计量 = %.4f\\n', hw, pw, statsw.tstat);\nfprintf('体重均值差异对应95%%置信区间参考 = [%.4f, %.4f]\\n', ciw(1), ciw(2));"
+  },
+  {
+    "id": "Cls06-033",
+    "source_file": "Cls06.md",
+    "title": "第4题",
+    "question": "20 名学生参加某课程同样知识的两次测验。根据两次测验成绩判断两次测验的难度是否相同。",
+    "answer": "clc; clear; close all;\n\nx1 = [93 85 79 90 78 76 81 85 88 68 92 73 88 84 90 70 69 83 83 85];\nx2 = [88 89 86 85 87 88 75 93 88 78 86 86 80 89 85 79 78 88 88 90];\n\nalpha = 0.05;\n\nd = x1 - x2;\n\ndisp('成对差值');\ndisp(d);\n\nfigure;\nhistogram(d);\ngrid on;\ntitle('两次成绩差值直方图');\nxlabel('第一次-第二次');\nylabel('频数');\n\nfigure;\nqqplot(d);\ngrid on;\ntitle('两次成绩差值QQ图');\n\n[h_d,p_d] = lillietest(d,alpha);\n\ndisp(' ');\ndisp('差值正态性检验');\nfprintf('h = %d, p = %.6f\\n', h_d, p_d);\n\n[h,p,ci,stats] = ttest(x1,x2,alpha,0);\n\ndisp(' ');\ndisp('成对t检验结果');\nfprintf('h = %d\\n', h);\nfprintf('p = %.6f\\n', p);\nfprintf('t统计量 = %.4f\\n', stats.tstat);\nfprintf('均值差的95%%置信区间 = [%.4f, %.4f]\\n', ci(1), ci(2));\n\nm1 = mean(x1);\ns1 = std(x1);\nm2 = mean(x2);\ns2 = std(x2);\n\ndisp(' ');\ndisp('描述统计');\nfprintf('第一次测试：均值 = %.4f, 标准差 = %.4f\\n', m1, s1);\nfprintf('第二次测试：均值 = %.4f, 标准差 = %.4f\\n', m2, s2);\nfprintf('平均差值(第一次-第二次) = %.4f\\n', mean(d));"
+  },
+  {
+    "id": "Cls06-034",
+    "source_file": "Cls06.md",
+    "title": "第5题",
+    "question": "参考吸血压例子中的自编函数 `pttest2()`，编写一个函数实现两个正态总体方差比检验。输入参数为样本均值和样本方差、显著性水平以及双侧单侧等信息，输出类似 `vartest2()` 函数的所有结果，命名为 `Ftest2`。",
+    "answer": "function [h,sig,ci,stats] = Ftest2(s1sq,s2sq,n1,n2,alpha,tail)\n\nF = s1sq / s2sq;\nv1 = n1 - 1;\nv2 = n2 - 1;\n\nstats.fstat = F;\nstats.df1 = v1;\nstats.df2 = v2;\n\nif tail == 0\n    Fl = finv(alpha/2, v1, v2);\n    Fu = finv(1-alpha/2, v1, v2);\n\n    if F >= Fl && F <= Fu\n        h = 0;\n    else\n        h = 1;\n    end\n\n    sig = 2 * min(fcdf(F,v1,v2), 1-fcdf(F,v1,v2));\n    ci = [F / finv(1-alpha/2,v1,v2), F / finv(alpha/2,v1,v2)];\nend\n\nif tail == 1\n    Fu = finv(1-alpha, v1, v2);\n\n    if F <= Fu\n        h = 0;\n    else\n        h = 1;\n    end\n\n    sig = 1 - fcdf(F,v1,v2);\n    ci = [F / finv(1-alpha,v1,v2), inf];\nend\n\nif tail == -1\n    Fl = finv(alpha, v1, v2);\n\n    if F >= Fl\n        h = 0;\n    else\n        h = 1;\n    end\n\n    sig = fcdf(F,v1,v2);\n    ci = [0, F / finv(alpha,v1,v2)];\nend\n\nend\n\nclc; clear;\n\nx = [12.1 11.8 12.5 11.9 12.3 12.0 11.7 12.4];\ny = [11.2 11.6 11.4 11.5 11.8 11.3 11.7 11.1];\n\nn1 = length(x);\nn2 = length(y);\ns1sq = var(x);\ns2sq = var(y);\n\nalpha = 0.05;\ntail = 0;\n\n[h,sig,ci,stats] = Ftest2(s1sq,s2sq,n1,n2,alpha,tail);\n\ndisp(' Ftest2 检验结果');\nfprintf('h = %d\\n', h);\nfprintf('p值 = %.6f\\n', sig);\nfprintf('F统计量 = %.6f\\n', stats.fstat);\nfprintf('置信区间 = [%.6f, %.6f]\\n', ci(1), ci(2));"
+  },
+  {
+    "id": "Cls06-035",
+    "source_file": "Cls06.md",
+    "title": "第6题",
+    "question": "在“加油站合同制定问题”中，根据所给理论分析和公式，编程计算第 5 问中显著性水平和第二类错误表格中的值。",
+    "answer": "clc; clear;\n\nx = [0.0864 0.0744 0.0864 0.0752 0.0760 ...\n     0.0954 0.0936 0.1016 0.0800 0.0880];\n\nn = length(x);\nxbar = mean(x);\ns = std(x);\n\nmu0 = 0.08;\nmu1 = 0.086;\n\nalpha_list = [0.01 0.05 0.10 0.20 0.30];\nbeta_list = zeros(size(alpha_list));\n\nfor k = 1:length(alpha_list)\n    alpha = alpha_list(k);\n\n    t_alpha = tinv(1-alpha, n-1);\n\n    delta = (mu1 - mu0) / (s/sqrt(n));\n    beta_list(k) = nctcdf(t_alpha, n-1, delta);\nend\n\ndisp('alpha 与 beta 对照表');\ndisp('   alpha         beta');\ndisp([alpha_list(:), beta_list(:)]);"
+  },
+  {
+    "id": "Cls07-036",
+    "source_file": "Cls07.md",
+    "title": "第1题",
+    "question": "课本 P321 第1题：建立刀具厚度对于切削时间的回归模型，对模型和回归系数进行检验，并预测 7.5h 和 15h 后的刀具厚度。",
+    "answer": "clear;clc;close all\nformat long\n\nx=0:10;\ny=[30.6 29.1 28.4 28.1 28.0 27.7 27.5 27.2 27.0 26.8 26.5];\n\nn=length(x);\nX=[ones(n,1),x'];\n\n[b,bi,r,ri,s]=regress(y',X,0.05)\n\nfigure\nplot(x,y,'+'),grid on,hold on\nxx=0:0.1:15;\nyy=b(1)+b(2)*xx;\nplot(xx,yy)\nxlabel('切削时间/h')\nylabel('刀具厚度/cm')\ntitle('刀具厚度对切削时间的一元线性回归')\n\nfigure\nrcoplot(r,ri)\ntitle('残差分析')\n\nx0=[7.5;15];\nX0=[ones(2,1),x0];\ny0=X0*b\n\n[p,S]=polyfit(x,y,1);\n[yfit,delta]=polyconf(p,x0,S,'alpha',0.05,'predopt','observation');\npre_interval=[yfit-delta,yfit+delta]\n\nmdl=fitlm(x,y)\npredict(mdl,x0,'Prediction','observation')"
+  },
+  {
+    "id": "Cls07-037",
+    "source_file": "Cls07.md",
+    "title": "第2题",
+    "question": "课本 P322 第4题：13 名少年儿童参加睡眠时间与年龄关系的调查，画出散点图，建立回归模型并检验模型有效性，解释结果；给出 10 岁孩子的平均睡眠时间及预测区间。",
+    "answer": "clear;clc;close all\nformat long\n\ny=[586 462 491 565 462 532 478 515 493 528 576 533 531];\nx=[4.4 14.0 10.1 6.7 11.5 9.6 12.4 8.9 11.1 7.8 5.5 8.6 7.2];\n\nn=length(x);\nX=[ones(n,1),x'];\n\n[b,bi,r,ri,s]=regress(y',X,0.05)\n\nfigure\nplot(x,y,'+'),grid on,hold on\nxx=min(x):0.1:max(x);\nyy=b(1)+b(2)*xx;\nplot(xx,yy)\nxlabel('年龄/岁')\nylabel('睡眠时间/min')\ntitle('睡眠时间与年龄的一元线性回归')\n\nfigure\nrcoplot(r,ri)\ntitle('残差分析')\n\nx0=10;\nX0=[1,x0];\ny0=X0*b\n\n[p,S]=polyfit(x,y,1);\n[yfit,delta]=polyconf(p,x0,S,'alpha',0.05,'predopt','observation');\npre_interval=[yfit-delta,yfit+delta]\n\nmdl=fitlm(x,y)\npredict(mdl,x0,'Prediction','observation')"
+  },
+  {
+    "id": "Cls07-038",
+    "source_file": "Cls07.md",
+    "title": "第3题",
+    "question": "课本 P326 第10题：根据某城市 18 位 35–44 岁经理的年平均收入、风险偏好度和人寿保险额数据，建立合适的回归模型，分析人寿保险额与年平均收入、风险偏好度之间的关系，并学习使用 `fitlm()` 函数进行回归分析。",
+    "answer": "clear;clc;close all\nformat long\n\ny =[196 63 252 84 126 14 49 49 266 49 105 98 77 14 56 245 133 133];\nx1=[66.290 40.964 72.996 45.010 57.204 26.852 38.122 35.840 75.796 ...\n    37.408 54.376 46.186 46.130 30.366 39.060 79.380 52.766 55.916];\nx2=[7 5 10 6 4 5 4 6 9 5 2 7 4 3 5 1 8 6];\n\nn=length(y);\n\nX=[ones(n,1),x1',x2'];\n[b,bi,r,ri,s]=regress(y',X,0.05)\n\nfigure\nrcoplot(r,ri)\ntitle('线性模型残差分析')\n\nX2=[ones(n,1),x1',x1'.^2,x2'];\n[b2,bi2,r2,ri2,s2]=regress(y',X2,0.05)\n\nfigure\nrcoplot(r2,ri2)\ntitle('含x1二次项模型残差分析')\n\nX3=[ones(n,1),x1',x2',x1'.^2,x1'.*x2',x2'.^2];\n[b3,bi3,r3,ri3,s3]=regress(y',X3,0.05)\n\nfigure\nrcoplot(r3,ri3)\ntitle('完全二次模型残差分析')\n\nx=[x1;x2]';\nrstool(x,y','quadratic')\n\nT=table(y',x1',x2','VariableNames',{'y','x1','x2'});\n\nmdl1=fitlm(T,'y ~ x1 + x2')\nmdl2=fitlm(T,'y ~ x1 + x1^2 + x2')\nmdl3=fitlm(T,'y ~ x1 + x2 + x1^2 + x1:x2 + x2^2')\n\nanova(mdl1)\nanova(mdl2)\nanova(mdl3)"
+  },
+  {
+    "id": "Cls08-039",
+    "source_file": "Cls08.md",
+    "title": "第1题 单个受试者建图与基本指标",
+    "question": "已知 BrainData.mat 中 AdjMatrices(:,:,1) 表示第1名受试者的脑功能连接矩阵，NodeNames 给出了90个脑区名称，推荐阈值为0.23。\n\n完成：\n\n1. 将该受试者的加权连接矩阵按阈值0.23二值化，建立无向脑网络模型，并写出相应MATLAB建图代码。\n2. 计算各节点的度，并求该网络的平均度。\n3. 分别计算 Frontal_Sup_L、Precuneus_L、Hippocampus_L 的局部聚类系数，并比较哪个节点更可能是局部团簇中的关键节点。\n4. 绘制该受试者的脑网络图。",
+    "answer": "clc; clear; close all;\n\nload('BrainData.mat');\n\nthr = RecommendedThreshold(1);\nW = AdjMatrices(:,:,1);\nnNodes = size(W,1);\n\nB = double(W >= thr);\nB(1:nNodes+1:end) = 0;\nB = double((B+B') > 0);\n\nG = graph(B, NodeNames);\n\ndeg = degree(G);\nmeanDegree = mean(deg);\n\nfprintf('第1名受试者网络边数 = %d\\n', nnz(triu(B,1)));\nfprintf('平均度 = %.4f\\n', meanDegree);\n\nC = localClusteringCoeff(B);\n\ntargets = [\"Frontal_Sup_L\";\n           \"Precuneus_L\";\n           \"Hippocampus_L\"];\n\nfor i = 1:length(targets)\n    idx = find(string(NodeNames) == targets(i));\n    fprintf('%s: 编号=%d, 度=%d, 局部聚类系数=%.4f\\n', ...\n        targets(i), idx, deg(idx), C(idx));\nend\n\nfigure;\np = plot(G,'Layout','force','NodeLabel',{});\ntitle('Subject 1 Binary Brain Network');\n\ntargetIdx = zeros(length(targets),1);\nfor i = 1:length(targets)\n    targetIdx(i) = find(string(NodeNames) == targets(i));\nend\n\nhighlight(p,targetIdx,'NodeColor','r','MarkerSize',8);\n\nfunction C = localClusteringCoeff(B)\n\nn = size(B,1);\nC = zeros(n,1);\n\nfor i = 1:n\n\n    neigh = find(B(i,:) > 0);\n    k = length(neigh);\n\n    if k >= 2\n        subB = B(neigh,neigh);\n        actualEdges = nnz(triu(subB,1));\n\n        C(i) = 2*actualEdges/(k*(k-1));\n    else\n        C(i) = 0;\n    end\n\nend\n\nend"
+  },
+  {
+    "id": "Cls08-040",
+    "source_file": "Cls08.md",
+    "title": "第2题 100名受试者网络指标统计",
+    "question": "现对全部100名受试者进行分析。每名受试者都按照阈值0.23将连接矩阵二值化，得到对应脑网络。\n\n完成：\n\n1. 对每名受试者计算平均度、平均聚类系数、全局效率。\n2. 将结果整理成数据表，包含 SubjectID、Labels 以及各项网络指标。\n3. 给出 HC、MCI、AD 三组上述指标的均值和标准差。\n4. 简要说明这些指标分别反映脑网络的什么特征。",
+    "answer": "clc; clear; close all;\n\nload('BrainData.mat');\n\nthr = RecommendedThreshold(1);\nnSub = size(AdjMatrices,3);\nnNodes = size(AdjMatrices,1);\n\nLabels = string(Labels);\nSubjectID = string(SubjectID);\n\nMeanDegree = zeros(nSub,1);\nMeanClustering = zeros(nSub,1);\nGlobalEfficiency = zeros(nSub,1);\n\nfor s = 1:nSub\n\n    W = AdjMatrices(:,:,s);\n\n    B = double(W >= thr);\n    B(1:nNodes+1:end) = 0;\n    B = double((B+B') > 0);\n\n    G = graph(B);\n\n    MeanDegree(s) = mean(degree(G));\n    MeanClustering(s) = mean(localClusteringCoeff(B));\n    GlobalEfficiency(s) = globalEfficiency(B);\n\nend\n\nSubjectMetrics = table(SubjectID, Labels, ...\n    MeanDegree, MeanClustering, GlobalEfficiency);\n\ndisp(SubjectMetrics);\n\ngroupOrder = [\"HC\",\"MCI\",\"AD\"];\n\nfor i = 1:length(groupOrder)\n\n    g = groupOrder(i);\n    idx = Labels == g;\n\n    fprintf('\\n%s组：\\n', g);\n\n    fprintf('平均度 = %.4f ± %.4f\\n', ...\n        mean(MeanDegree(idx)), std(MeanDegree(idx)));\n\n    fprintf('平均聚类系数 = %.4f ± %.4f\\n', ...\n        mean(MeanClustering(idx)), std(MeanClustering(idx)));\n\n    fprintf('全局效率 = %.4f ± %.4f\\n', ...\n        mean(GlobalEfficiency(idx)), std(GlobalEfficiency(idx)));\n\nend\n\nfunction E = globalEfficiency(B)\n\nG = graph(B);\nD = distances(G);\n\nn = size(B,1);\n\ninvD = 1 ./ D;\n\ninvD(eye(n)==1) = 0;\ninvD(isinf(invD)) = 0;\n\nE = sum(invD(:)) / (n*(n-1));\n\nend"
+  },
+  {
+    "id": "Cls08-041",
+    "source_file": "Cls08.md",
+    "title": "第3题 组间比较与统计检验",
+    "question": "利用第2题中得到的网络指标，比较 HC、MCI、AD 三组受试者脑网络结构的差异。\n\n完成：\n\n1. 对平均度、平均聚类系数和全局效率分别绘制按组分类的箱线图。\n2. 采用单因素方差分析（ANOVA）检验三组在上述指标上是否存在显著差异。\n3. 若检验结果显著，进一步说明如何进行事后两两比较。\n4. 从脑网络退化角度进行简要解释。",
+    "answer": "clc; clear; close all;\n\nload('BrainData.mat');\n\nthr = RecommendedThreshold(1);\nnSub = size(AdjMatrices,3);\nnNodes = size(AdjMatrices,1);\n\nLabels = string(Labels);\n\nMeanDegree = zeros(nSub,1);\nMeanClustering = zeros(nSub,1);\nGlobalEfficiency = zeros(nSub,1);\n\nfor s = 1:nSub\n\n    W = AdjMatrices(:,:,s);\n\n    B = double(W >= thr);\n    B(1:nNodes+1:end) = 0;\n    B = double((B+B') > 0);\n\n    G = graph(B);\n\n    MeanDegree(s) = mean(degree(G));\n    MeanClustering(s) = mean(localClusteringCoeff(B));\n    GlobalEfficiency(s) = globalEfficiency(B);\n\nend\n\nfigure;\n\nsubplot(1,3,1);\nboxplot(MeanDegree, Labels);\ntitle('MeanDegree');\nylabel('平均度');\n\nsubplot(1,3,2);\nboxplot(MeanClustering, Labels);\ntitle('MeanClustering');\nylabel('平均聚类系数');\n\nsubplot(1,3,3);\nboxplot(GlobalEfficiency, Labels);\ntitle('GlobalEfficiency');\nylabel('全局效率');\n\n[p1,tbl1,stats1] = anova1(MeanDegree, Labels);\n[p2,tbl2,stats2] = anova1(MeanClustering, Labels);\n[p3,tbl3,stats3] = anova1(GlobalEfficiency, Labels);\n\nc1 = multcompare(stats1);\nc2 = multcompare(stats2);\nc3 = multcompare(stats3);"
+  },
+  {
+    "id": "Cls08-042",
+    "source_file": "Cls08.md",
+    "title": "第4题 自拟研究问题",
+    "question": "基于 BrainData.mat 提供的数据，自拟一个与脑网络结构差异有关的研究问题，并完成分析。\n\n要求：\n\n1. 研究问题与脑网络拓扑特征、组间差异、关键节点或功能模块有关。\n2. 可采用更换阈值、提取新指标、模块分析等方法。\n3. 至少给出1张图和1个统计结果表。\n4. 给出主要结论并说明局限性。",
+    "answer": "clc; clear; close all;\n\nload('BrainData.mat');\n\nthr = RecommendedThreshold(1);\n\nnSub = size(AdjMatrices,3);\nnNodes = size(AdjMatrices,1);\n\nLabels = string(Labels);\nModuleNames = string(ModuleNames);\n\ndmnMask = ModuleNames == \"DMN\";\nnDMN = sum(dmnMask);\n\nDMNDensity = zeros(nSub,1);\n\nfor s = 1:nSub\n\n    W = AdjMatrices(:,:,s);\n\n    B = double(W >= thr);\n    B(1:nNodes+1:end) = 0;\n    B = double((B+B') > 0);\n\n    Bdmn = B(dmnMask, dmnMask);\n\n    DMNDensity(s) = sum(Bdmn(:)) / (nDMN*(nDMN-1));\n\nend\n\nfigure;\nboxplot(DMNDensity, Labels);\n\ntitle('DMN模块内部连接密度');\nylabel('DMN density');\n\ngroupOrder = [\"HC\",\"MCI\",\"AD\"];\n\nfor i = 1:length(groupOrder)\n\n    g = groupOrder(i);\n    idx = Labels == g;\n\n    fprintf('%s组 DMN密度 = %.4f ± %.4f\\n', ...\n        g, mean(DMNDensity(idx)), std(DMNDensity(idx)));\n\nend\n\n[p,tbl,stats] = anova1(DMNDensity, Labels);\n\nc = multcompare(stats);"
+  },
+  {
+    "id": "Cls08-043",
+    "source_file": "Cls08.md",
+    "title": "第5题 K-means聚类实验",
+    "question": "数据文件 BrainFeatures_100.mat 已给出100名受试者的三个指标：平均度、聚类系数、全局效率。\n\n完成：\n\n1. 加载数据，选择平均聚类系数与全局效率两个指标，对数据进行标准化。\n2. 使用 K-means 将受试者分为3类，并绘制聚类结果及聚类中心。\n3. 讨论仅利用这三个网络指标是否能够完全区分健康人与病人。",
+    "answer": "clc; clear; close all;\n\nload('BrainFeatures_100.mat');\n\nX = [MeanClustering(:), GlobalEfficiency(:)];\n\nXz = zscore(X);\n\ndisp(mean(Xz));\ndisp(std(Xz));\n\nclc; clear; close all;\n\nload('BrainFeatures_100.mat');\n\nX = [MeanClustering(:), GlobalEfficiency(:)];\n\nXz = zscore(X);\n\nK = 3;\n\n[idx,C] = kmeans(Xz, K, 'Replicates',10);\n\nfigure;\n\ngscatter(Xz(:,1), Xz(:,2), idx, 'rgb', 'osd', 8);\n\nhold on;\n\nplot(C(:,1), C(:,2), ...\n    'kx', ...\n    'MarkerSize',14, ...\n    'LineWidth',3);\n\nxlabel('平均聚类系数（标准化）');\nylabel('全局效率（标准化）');\n\ntitle('K-means 聚类结果（K=3)');\ngrid on;"
+  },
+  {
+    "id": "Cls08-044",
+    "source_file": "Cls08.md",
+    "title": "第6题 KNN分类预测",
+    "question": "利用已知受试者指标以及对应诊断标签（GroupCode：1-健康，2-MCI，3-AD）。\n\n完成：\n\n1. 随机划分训练集（70人）和测试集（30人）。\n2. 建立 K=3 的 KNN 分类器。\n3. 计算分类准确率。\n4. 讨论 K 值选择对分类效果的影响。",
+    "answer": "clc; clear; close all;\n\nload('BrainFeatures_100.mat');\n\nX = [MeanDegree(:), MeanClustering(:), GlobalEfficiency(:)];\nY = GroupCode(:);\n\nrng(1);\n\nn = length(Y);\n\nrandIndex = randperm(n);\n\ntrainIndex = randIndex(1:70);\ntestIndex  = randIndex(71:100);\n\ntrainX = X(trainIndex,:);\ntrainY = Y(trainIndex);\n\ntestX = X(testIndex,:);\ntestY = Y(testIndex);\n\nmu = mean(trainX);\nsigma = std(trainX);\n\ntrainXz = (trainX - repmat(mu,size(trainX,1),1)) ...\n        ./ repmat(sigma,size(trainX,1),1);\n\ntestXz = (testX - repmat(mu,size(testX,1),1)) ...\n       ./ repmat(sigma,size(testX,1),1);\n\nK = 3;\n\nmdl = fitcknn(trainXz, trainY, ...\n    'NumNeighbors',K);\n\npredY = predict(mdl, testXz);\n\nacc = mean(predY == testY);\n\nfprintf('KNN 分类准确率：%.2f%%\\n', acc*100);\n\nC = confusionmat(testY, predY);\n\ndisp(C);\n\nfigure;\n\ngscatter(testXz(:,2), testXz(:,3), ...\n    testY, 'bgr', 'osd', 8);\n\nhold on;\n\ngscatter(testXz(:,2), testXz(:,3), ...\n    predY, 'bgr', 'xxx', 10);\n\nxlabel('平均聚类系数（标准化）');\nylabel('全局效率（标准化）');\n\ntitle('KNN 测试集分类结果');\n\ngrid on;"
+  },
+  {
+    "id": "Cls09-045",
+    "source_file": "Cls09.md",
+    "title": "第1题",
+    "question": "分别用随机投点法和均值估计法估计积分\n\n\\[\n\\int_0^\\pi \\left(3\\sin x^2-\\sqrt{1+x^2}\\right)\\,dx\n\\]\n\n并进行正态性检验和均值检验。",
+    "answer": "clc; clear; close all;\n\nf = @(x) 3*sin(x.^2) - sqrt(1+x.^2);\na = 0;\nb = pi;\n\nN = 10000;\nM = 10;\n\nx = linspace(a,b,1000);\ny = f(x);\n\nfigure;\nplot(x,y,'LineWidth',1.5);\ngrid on;\nxlabel('x');\nylabel('f(x)');\ntitle('被积函数图像');\n\nmu = integral(f,a,b);\n\nI_mean = zeros(M,1);\nI_hit = zeros(M,1);\n\nfmin = min(y);\nfmax = max(y);\n\nfor k = 1:M\n    xr = a + (b-a)*rand(N,1);\n\n    I_mean(k) = (b-a)*mean(f(xr));\n\n    xp = a + (b-a)*rand(N,1);\n    yp = fmin + (fmax-fmin)*rand(N,1);\n    fxp = f(xp);\n\n    area_box = (b-a)*(fmax-fmin);\n    I_hit(k) = area_box*mean(yp <= fxp) + (b-a)*fmin;\nend\n\ndisp('均值估计法10次结果：');\ndisp(I_mean);\n\ndisp('随机投点法10次结果：');\ndisp(I_hit);\n\n[h1,p1] = lillietest(I_mean);\n[h2,p2] = lillietest(I_hit);\n\nfprintf('均值估计法正态性检验：h=%d, p=%.6f\\n',h1,p1);\nfprintf('随机投点法正态性检验：h=%d, p=%.6f\\n',h2,p2);\n\n[h3,p3,ci3,stats3] = ttest(I_mean,mu);\n[h4,p4,ci4,stats4] = ttest(I_hit,mu);\n\nfprintf('均值估计法均值检验：h=%d, p=%.6f\\n',h3,p3);\nfprintf('随机投点法均值检验：h=%d, p=%.6f\\n',h4,p4);"
+  },
+  {
+    "id": "Cls09-046",
+    "source_file": "Cls09.md",
+    "title": "第2题",
+    "question": "某食品公司推出集卡活动，卡片上有“恭”“喜”“发”“财”四种图案，集齐四种图案即为成功。分别模拟四类卡片等概率和不等概率时，集齐四类卡片需要购买食品包数的期望。",
+    "answer": "clc; clear; close all;\n\nN = 100000;\n\np1 = [1/4 1/4 1/4 1/4];\nE1 = couponSim(p1,N);\n\nfprintf('四类卡片等概率时，期望购买包数约为 %.4f\\n',E1);\n\np2 = [0.1 0.3 0.3 0.3];\nE2 = couponSim(p2,N);\n\nfprintf('四类卡片概率为[0.1,0.3,0.3,0.3]时，期望购买包数约为 %.4f\\n',E2);\n\nfunction E = couponSim(p,N)\n\ncnt = zeros(N,1);\n\nfor i = 1:N\n    have = zeros(1,4);\n    k = 0;\n\n    while sum(have) < 4\n        u = rand;\n        cp = cumsum(p);\n        card = find(u <= cp,1);\n\n        have(card) = 1;\n        k = k + 1;\n    end\n\n    cnt(i) = k;\nend\n\nE = mean(cnt);\n\nend"
+  },
+  {
+    "id": "Cls09-047",
+    "source_file": "Cls09.md",
+    "title": "第3题",
+    "question": "对给定回归数据：\n\n|序号|Y|x1|x2|\n|---|---|---|---|\n|1|9.08|-1.49|4.01|\n|2|46.6|1.65|5.43|\n|3|35.52|1.61|3.84|\n|4|9.16|-0.06|2.31|\n|5|47.55|2.27|3.82|\n|6|75.43|2.83|5.47|\n|7|4.31|0.43|0.11|\n|8|121.12|5.04|2.89|\n|9|196.03|6.71|3.36|\n\n分别作散点图，建立二元线性回归模型和完全二次回归模型，并用逐步回归精简模型。",
+    "answer": "clc; clear; close all;\n\nY  = [9.08 46.6 35.52 9.16 47.55 75.43 4.31 121.12 196.03]';\nx1 = [-1.49 1.65 1.61 -0.06 2.27 2.83 0.43 5.04 6.71]';\nx2 = [4.01 5.43 3.84 2.31 3.82 5.47 0.11 2.89 3.36]';\n\nfigure;\nscatter(x1,Y,'filled');\ngrid on;\nxlabel('x1');\nylabel('Y');\ntitle('Y关于x1的散点图');\n\nfigure;\nscatter(x2,Y,'filled');\ngrid on;\nxlabel('x2');\nylabel('Y');\ntitle('Y关于x2的散点图');\n\nn = length(Y);\n\nX1 = [ones(n,1),x1,x2];\n[b1,bint1,r1,rint1,stats1] = regress(Y,X1,0.05);\n\ndisp('二元线性回归参数：');\ndisp(b1);\ndisp('二元线性回归统计量：');\ndisp(stats1);\n\nfigure;\nrcoplot(r1,rint1);\ntitle('二元线性回归残差图');\n\nX2 = [ones(n,1),x1,x2,x1.*x2,x1.^2,x2.^2];\n[b2,bint2,r2,rint2,stats2] = regress(Y,X2,0.05);\n\ndisp('完全二次回归参数：');\ndisp(b2);\ndisp('完全二次回归统计量：');\ndisp(stats2);\n\nfigure;\nrcoplot(r2,rint2);\ntitle('完全二次回归残差图');\n\nX = [x1,x2,x1.*x2,x1.^2,x2.^2];\nstepwise(X,Y);"
+  },
+  {
+    "id": "Cls09-048",
+    "source_file": "Cls09.md",
+    "title": "第4题",
+    "question": "某公司未来三年内有3000万元资金用于投资。每年年初可以投资，任意一年投资 \\(x\\) 万元会在第三年年底收回资金并获得 \\(8\\sqrt{x}\\) 万元投资收益。未投资资金可存入银行，并在当年年底获得8%的利息，银行本息可用于下一年投资。求如何使用资金才能在第三年年底获得最大投资收益。",
+    "answer": "clc; clear;\n\nmoney0 = 3000;\nr = 0.08;\n\nfun = @(x) -(8*sqrt(x(1)) + 8*sqrt(x(2)) + 8*sqrt(x(3)));\n\nA = [1 0 0;\n     -1 1/(1+r) 0;\n     -1 0 1/(1+r)^2];\n\nb = [money0;\n     0;\n     0];\n\nlb = [0 0 0];\nub = [];\n\nx0 = [1000 1000 1000];\n\n[xopt,fval] = fmincon(fun,x0,A,b,[],[],lb,ub);\n\nmaxIncome = -fval;\n\nfprintf('第一年投资 %.4f 万元\\n',xopt(1));\nfprintf('第二年投资 %.4f 万元\\n',xopt(2));\nfprintf('第三年投资 %.4f 万元\\n',xopt(3));\nfprintf('最大投资收益 %.4f 万元\\n',maxIncome);"
+  },
+  {
+    "id": "Cls09-049",
+    "source_file": "Cls09.md",
+    "title": "第5题",
+    "question": "舰艇甲向位于其正东方1km处的舰艇乙发射导弹。舰艇乙以最大速度 \\(v=15m/s\\) 向东北方向直线逃离，导弹头始终对准舰艇乙，速度为 \\(w\\)。\n\n1. 当 \\(w=180m/s\\) 时，绘制导弹运行曲线并估计导弹击中舰艇乙的时间。\n2. 若导弹在2.5秒后击中舰艇乙，绘制导弹飞行轨迹并估计飞行距离。",
+    "answer": "clc; clear; close all;\n\nv = 15;\nw = 180;\n\nxB0 = 1000;\nyB0 = 0;\n\ndir = [1,1]/sqrt(2);\n\nf = @(t,z)[\n    w*(xB0 + v*dir(1)*t - z(1)) / sqrt((xB0 + v*dir(1)*t - z(1))^2 + (yB0 + v*dir(2)*t - z(2))^2);\n    w*(yB0 + v*dir(2)*t - z(2)) / sqrt((xB0 + v*dir(1)*t - z(1))^2 + (yB0 + v*dir(2)*t - z(2))^2)\n];\n\n[t,z] = ode45(f,[0,20],[0,0]);\n\nxB = xB0 + v*dir(1)*t;\nyB = yB0 + v*dir(2)*t;\n\nd = sqrt((xB-z(:,1)).^2 + (yB-z(:,2)).^2);\nidx = find(d < 1,1);\n\nif ~isempty(idx)\n    hitTime = t(idx);\nelse\n    hitTime = NaN;\nend\n\nfigure;\nplot(z(:,1),z(:,2),'r','LineWidth',1.5);\nhold on;\nplot(xB,yB,'b--','LineWidth',1.2);\ngrid on;\naxis equal;\nxlabel('x/m');\nylabel('y/m');\ntitle('w=180m/s时导弹追踪轨迹');\nlegend('导弹轨迹','舰艇乙轨迹');\n\nfprintf('w=180m/s时击中时间约为 %.4f 秒\\n',hitTime);\n\nT = 2.5;\n\ntargetFun = @(ww) missDistance(ww,T,v,xB0,yB0,dir);\n\nw2 = fzero(targetFun,[100,1000]);\n\nf2 = @(t,z)[\n    w2*(xB0 + v*dir(1)*t - z(1)) / sqrt((xB0 + v*dir(1)*t - z(1))^2 + (yB0 + v*dir(2)*t - z(2))^2);\n    w2*(yB0 + v*dir(2)*t - z(2)) / sqrt((xB0 + v*dir(1)*t - z(1))^2 + (yB0 + v*dir(2)*t - z(2))^2)\n];\n\n[t2,z2] = ode45(f2,[0,T],[0,0]);\n\ndist = sum(sqrt(diff(z2(:,1)).^2 + diff(z2(:,2)).^2));\n\nfigure;\nplot(z2(:,1),z2(:,2),'r','LineWidth',1.5);\ngrid on;\naxis equal;\nxlabel('x/m');\nylabel('y/m');\ntitle('2.5秒击中时导弹飞行轨迹');\n\nfprintf('2.5秒击中时导弹速度约为 %.4f m/s\\n',w2);\nfprintf('导弹飞行距离约为 %.4f m\\n',dist);\n\nfunction d = missDistance(w,T,v,xB0,yB0,dir)\n\nf = @(t,z)[\n    w*(xB0 + v*dir(1)*t - z(1)) / sqrt((xB0 + v*dir(1)*t - z(1))^2 + (yB0 + v*dir(2)*t - z(2))^2);\n    w*(yB0 + v*dir(2)*t - z(2)) / sqrt((xB0 + v*dir(1)*t - z(1))^2 + (yB0 + v*dir(2)*t - z(2))^2)\n];\n\n[~,z] = ode45(f,[0,T],[0,0]);\n\nxBT = xB0 + v*dir(1)*T;\nyBT = yB0 + v*dir(2)*T;\n\nd = sqrt((z(end,1)-xBT)^2 + (z(end,2)-yBT)^2);\n\nend"
+  }
+]
