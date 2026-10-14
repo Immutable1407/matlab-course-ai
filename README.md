@@ -1,163 +1,93 @@
 # MATLAB 课程专项本地 AI
 
-本项目记录了一次从课程题库到本地离线 AI 的完整实践：把数学实验课程中的 MATLAB 题目整理成 Markdown，转换为可训练数据，进行有依据的数据增强，在 Windows CUDA 环境中微调 Qwen2.5-Coder-1.5B-Instruct，再把训练结果转换、量化并封装成可在低配 Windows 机器上运行的本地 AI。
+一个从课程题库出发的本地代码生成项目：将 MATLAB 数学实验题整理为可追溯训练数据，使用 Qwen2.5-Coder-1.5B-Instruct 进行 QLoRA 微调，再将模型合并、转换和量化，适配低配置 Windows 电脑上的离线推理。
 
-最终便携包位于本地 `Open Mat/`。GitHub 仓库只保存源码、文档和关键小体积数据；GGUF 模型、Hugging Face 权重、KoboldCpp 可执行文件、训练输出等大文件保留在本地，不进入仓库。
+仓库提供题库、数据、训练与推理脚本及部署复盘。模型权重和推理器二进制未随仓库提交，需要自行训练或补齐已有本地产物。
 
-## 项目结论
-
-- 原始题库：9 个 `Cls*.md`，共抽取 49 组题目-代码配对。
-- 补充样例：`supplemental/Supplemental.md`，共 10 组常见数学实验题。
-- 基础样例：59 组，可用于训练增强和运行时检索。
-- 最终训练集：`dataset/final_train.jsonl`，300 条。
-- 最终验证集：`dataset/final_eval.jsonl`，9 条，按题目隔离。
-- 微调方式：Qwen2.5-Coder-1.5B-Instruct + 4bit QLoRA。
-- 训练输出：LoRA adapter、合并后的 HF 模型、F16 GGUF、Q4_K_M GGUF。
-- 最终部署：低配 Windows 10 机器上使用 KoboldCpp + Q4_K_M GGUF 成功启动。
-
-## 目标机器
-
-最终实战机配置如下：
+## 项目流程
 
 ```text
-系统：Windows 10 专业版 64 位，Version 19045
-CPU：Intel Core i5-6500，4 核 4 线程，Skylake
-内存：8GB RAM
-显卡：NVIDIA GeForce GT 730，2GB VRAM
-磁盘：HDD + SATA SSD
-Python：未安装
+9 份课程 Markdown + 补充题型
+  → 题目 / MATLAB 代码配对
+  → 按基础题目划分训练与验证
+  → 保留原题的提示改写增强
+  → Qwen 1.5B + 4-bit QLoRA
+  → LoRA 合并与 GGUF 转换
+  → Q4_K_M 量化
+  → Windows CPU 离线推理
 ```
 
-训练阶段不在这台机器上完成。训练使用 Windows + NVIDIA GPU + CUDA 环境，实战机只负责离线推理。
+项目还提供一条独立的检索辅助路线：用课程题库构造相似题 prompt，再交给 llama.cpp。它与最终 KoboldCpp 便携包是不同的使用入口。
 
-## 目录说明
+## 数据规模与处理方式
+
+| 数据 | 数量 |
+| --- | ---: |
+| 课程文件 `Cls01.md`–`Cls09.md` | 9 |
+| 原始题目与代码配对 | 49 |
+| 补充数学实验样例 | 10 |
+| 基础题目总数 | 59 |
+| 用于训练的基础题目 | 50 |
+| 验证基础题目 | 9 |
+| 最终训练记录 | 300 |
+| 最终验证记录 | 9 |
+| 最终检索库样例 | 59 |
+
+每个训练基础题生成 6 种提示形式，包括原始题面和保留原题的指令包装；对应 MATLAB 答案保持不变。增强扩大的是表达覆盖，300 条训练记录不代表 300 道独立题目。
+
+训练与验证先按基础题目划分，再只对训练题增强，避免同一道题的改写跨越两边。当前提交的数据可追溯到课程文件或 [`supplemental/Supplemental.md`](supplemental/Supplemental.md)。
+
+## 仓库结构
 
 ```text
-.
-├── Cls01.md ... Cls09.md          # 原始课程题库 Markdown
-├── supplemental/                  # 补充的真实常见题型样例
-├── scripts/                       # 数据准备、增强、下载和 GGUF 兼容转换脚本
-├── dataset/                       # 可训练 JSONL 数据和统计文件
-├── runtime/                       # 纯 Python 检索增强 prompt 构建
-├── app/                           # llama.cpp 路线的便携入口脚本
-├── deploy/                        # Windows llama.cpp 排障说明
-├── docs/                          # 全流程复盘文档
-└── Open Mat/                      # 本地最终便携包，仓库只保留 README 和启动脚本
+Cls01.md ... Cls09.md          # 课程题库
+supplemental/                 # 额外数学实验样例
+dataset/                      # 基础、增强、messages 与 Alpaca 数据
+scripts/                      # 数据处理、模型下载与 GGUF 转换
+train.py                      # QLoRA 训练
+test_infer.py                 # 单题推理检查
+merge_lora.py                 # LoRA 合并
+runtime/                      # 样例库与纯 Python 检索 prompt
+app/                          # llama.cpp 命令行入口
+Open Mat/                     # KoboldCpp 启动脚本与便携包说明
+deploy/                       # llama.cpp Windows 排障记录
+docs/full_process.md          # 全流程复盘
 ```
 
-以下目录或文件只保留本地，不推送到 GitHub：
+## 路线一：无需模型，查看数据与检索 prompt
 
-```text
-models/
-outputs/
-gguf/
-Open Mat/gguf/
-Open Mat/app_koboldcpp/
-*.gguf
-*.safetensors
-*.zip
-```
-
-## 数据处理
-
-原始题库采用统一结构：
-
-```text
-# 题目标题
-## 题目
-题面内容
-
-## 代码
-MATLAB 标准答案
-```
-
-运行：
+数据处理和检索脚本仅使用 Python 标准库。在仓库根目录运行：
 
 ```bash
 python3 scripts/prepare_dataset.py
-```
-
-会生成：
-
-```text
-dataset/raw_pairs.jsonl
-dataset/train.jsonl
-dataset/eval.jsonl
-dataset/train_alpaca.jsonl
-dataset/eval_alpaca.jsonl
-runtime/examples.json
-dataset/summary.json
-```
-
-增强数据：
-
-```bash
 python3 scripts/augment_dataset.py
+python3 runtime/retrieval.py --question "用二分法求方程的根，并输出迭代过程"
 ```
 
-会生成：
+前两条命令会重新生成 `dataset/` 和 `runtime/` 下的对应文件。`prepare_dataset.py` 生成基础 messages / Alpaca 数据与检索库；`augment_dataset.py` 合并补充样例并生成最终数据。
 
-```text
-dataset/augmented_pairs.jsonl
-dataset/final_train.jsonl
-dataset/final_eval.jsonl
-dataset/final_train_alpaca.jsonl
-dataset/final_eval_alpaca.jsonl
-runtime/final_examples.json
-dataset/augmentation_summary.json
-```
+`runtime/retrieval.py` 按字符、词项与双字符组合的余弦相似度检索，默认拼接 3 个参考题。它不使用 embedding 或向量数据库，也不自行生成 MATLAB 代码。
 
-增强策略是保守增强：对训练题做多种中文题面改写，并补充常见数学实验算法样例；不自动替换代码中的参数，避免制造题面与答案不一致的脏数据。
-
-## 数据可信度
-
-这批增强数据不是编造新题，而是可追溯增强：
-
-- `final_train.jsonl` 中每条样本都能追溯到 `raw_pairs.jsonl` 或 `supplemental/Supplemental.md` 的基础样例。
-- 答案代码与基础样例完全一致。
-- 改写题面包含原始题面或明确保留原始任务要求。
-- 验证集按题目隔离，不让同一道题的改写同时进入训练和验证。
-
-已做过抽查和全量校验：
-
-```text
-rows: 300
-missing_base: 0
-output_mismatch: 0
-base_question_not_in_prompt: 0
-```
-
-## 训练
-
-基础模型：
-
-```text
-Qwen/Qwen2.5-Coder-1.5B-Instruct
-```
-
-本地默认路径：
-
-```text
-models/Qwen2.5-Coder-1.5B-Instruct
-```
-
-如需重新下载：
+亦可仅打印应用入口的 prompt：
 
 ```bash
-.venv-download/bin/python scripts/download_model.py
+python3 app/ask_code.py --question "用二分法求 x^3-x-1=0 在 [1,2] 内的根" --print-prompt-only
 ```
 
-Windows CUDA 训练环境安装依赖：
+最终检索库包含全部 59 个基础题，包括验证题。评估模型泛化时应将纯模型表现与检索辅助表现分开，并限制检索库范围；否则不能把检索到验证答案后的结果当作未见题能力。
+
+## 路线二：重新微调模型
+
+训练需要兼容的 NVIDIA GPU / CUDA、PyTorch 和 bitsandbytes 环境。原项目记录使用 Windows CUDA 训练机，低配置部署机只承担推理。依赖列于 [`requirements.txt`](requirements.txt)，当前使用最低版本约束，未锁定完整复现环境。
+
+在项目独立 Python 环境中安装依赖并下载基础模型：
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+python scripts/download_model.py
 ```
 
-如果 CUDA 版 PyTorch 已经正确安装，不建议随意重装 `torch`，可只安装其余依赖：
-
-```bash
-pip install transformers datasets peft accelerate trl bitsandbytes safetensors
-```
+下载脚本使用 `huggingface_hub`；若环境中未安装该包，需要补装。默认模型目录为 `models/Qwen2.5-Coder-1.5B-Instruct`。
 
 开始训练：
 
@@ -165,139 +95,77 @@ pip install transformers datasets peft accelerate trl bitsandbytes safetensors
 python train.py
 ```
 
-默认训练配置：
+| 配置 | 默认值 |
+| --- | --- |
+| 模型 | `Qwen/Qwen2.5-Coder-1.5B-Instruct` |
+| 数据 | `dataset/final_train.jsonl` / `dataset/final_eval.jsonl` |
+| 量化 | 4-bit NF4 + double quant |
+| LoRA | rank 8、alpha 16、dropout 0.05 |
+| 最大序列长度 | 2048 |
+| 单设备 batch / 梯度累积 | 1 / 8 |
+| 训练轮数 / 学习率 | 3 / `2e-4` |
+| 输出 | `outputs/qwen_matlab_lora` |
 
-```text
-4bit NF4 + double quant
-LoRA rank = 8
-max_seq_length = 2048
-per_device_train_batch_size = 1
-gradient_accumulation_steps = 8
-epoch = 3
-output_dir = outputs/qwen_matlab_lora
-```
+训练使用 Transformers `Trainer`；system 和 user 部分的 labels 被设为 `-100`，主要对 assistant 答案计算 loss。脚本兼容 messages、Alpaca 和题目/答案字段格式。
 
-测试 LoRA：
+检查单题推理并合并 LoRA：
 
 ```bash
 python test_infer.py --load_in_4bit --question "用二分法求 x^3-x-1=0 在 [1,2] 内的根，输出迭代过程。"
-```
-
-合并 LoRA：
-
-```bash
 python merge_lora.py
 ```
 
-合并后的完整模型位于：
+合并结果默认写入 `outputs/qwen_matlab_merged`。`test_infer.py` 是单题 smoke test，仓库未提供自动执行 MATLAB、汇总通过率的完整评测器。
+
+## 路线三：GGUF 与离线部署
+
+合并后的 Hugging Face 模型需要转换成 GGUF，并使用外部 `llama-quantize` 量化。仓库保留 [`scripts/convert_hf_to_gguf_compat.py`](scripts/convert_hf_to_gguf_compat.py)，记录当时转换脚本与 `gguf` 包的兼容处理；转换工具及相关依赖需单独准备。
+
+历史产物命名为：
 
 ```text
-outputs/qwen_matlab_merged
+gguf/qwen_matlab_f16.gguf
+gguf/qwen_matlab_q4_k_m.gguf
 ```
 
-## 模型转换与量化
+全流程复盘记录 Q4_K_M 文件约 940 MB，并记录在 Windows 10、i5-6500、8 GB RAM 的电脑上成功加载 KoboldCpp。仓库未包含这些二进制与权重，因此该成功状态属于历史部署记录，不能仅克隆仓库就直接复现。
 
-训练结果回到 Mac 后，转换为 GGUF，再量化为低配机器更适合的 Q4_K_M。
-
-已生成的本地产物：
-
-```text
-gguf/qwen_matlab_f16.gguf       # F16 中间文件，约 2.9GB
-gguf/qwen_matlab_q4_k_m.gguf    # Q4_K_M，约 940MB，最终推荐
-```
-
-转换过程中遇到过 Homebrew `llama.cpp` 转换脚本和 PyPI `gguf` 包枚举不匹配的问题，因此保留了本地兼容脚本：
-
-```text
-scripts/convert_hf_to_gguf_compat.py
-```
-
-Mac 上测试 `llama-cli` 时使用过：
-
-```bash
-llama-cli \
-  -m gguf/qwen_matlab_q4_k_m.gguf \
-  --device none \
-  -p "<|im_start|>system\n你是数学实验课程的 MATLAB 编程助手。请只输出完整 MATLAB 代码。<|im_end|>\n<|im_start|>user\n用二分法求 x^3-x-1=0 在 [1,2] 内的根，输出迭代过程。<|im_end|>\n<|im_start|>assistant\n" \
-  -n 256 -c 2048 --temp 0.2 --no-conversation
-```
-
-## 推理器调教
-
-最初的部署路线是 `llama.cpp + llama-cli.exe`。在目标 Windows 机器上，三类联通测试均失败：
-
-```bat
-app\llama-cli.exe
-app\llama-cli.exe -h
-app\llama-cli.exe --version
-```
-
-现象是立即返回命令行，无 stdout、无 stderr、无弹窗。后续进一步得到过错误码 `-1073741819`，对应 Windows `0xC0000005` Access Violation，判断重点从模型文件转向推理器二进制兼容性。
-
-排查方向包括：
-
-- 确认 GGUF 文件存在且大小正常。
-- 确认 `llama-cli.exe` 和 DLL 存在。
-- 准备更旧的 `llama.cpp` CPU x64 包。
-- 尝试无 Python 的 `ask_direct_no_python.bat`。
-- 检查 VC++ Redistributable。
-- 考虑 AVX2、SSE42、generic x64 路线。
-
-最后切换为 KoboldCpp + GGUF。KoboldCpp 可显示 help，说明程序本体、运行库和 CPU 兼容性更合适。最终失败点主要收束到 Windows bat 文件编码、中文输出、多行续行符和路径解析问题。
-
-最终成功状态：
-
-```text
-Load Text Model OK: True
-Starting Kobold API on port 5001
-Starting OpenAI Compatible API on port 5001
-Please connect to custom endpoint at http://localhost:5001
-```
-
-## 最终便携包
-
-本地 `Open Mat/` 已精简为：
+补齐便携包：
 
 ```text
 Open Mat/
-├── app_koboldcpp/
-│   └── koboldcpp.exe
-├── gguf/
-│   └── qwen_matlab_q4_k_m.gguf
+├── app_koboldcpp/koboldcpp.exe       # 另行准备
+├── gguf/qwen_matlab_q4_k_m.gguf      # 另行准备
 ├── start_cpu.bat
 └── README.md
 ```
 
-启动方式：
+双击 `start_cpu.bat`，等待终端出现 `Load Text Model OK: True`，再打开浏览器访问 `http://localhost:5001`。使用时保持终端窗口开启。脚本采用 CPU 路线、2048 context、`--noblas` 和单行启动命令，缺少模型或可执行文件时会明确提示。
 
-1. 双击 `start_cpu.bat`。
-2. 等待出现 `Load Text Model OK: True`。
-3. 浏览器打开 `http://localhost:5001`。
-4. 使用期间不要关闭终端窗口。
+此便携启动脚本只加载模型和服务，**没有自动调用 `runtime/retrieval.py`**。需要相似题辅助时，应另行构造 prompt 或使用下一节的 Python 入口。
 
-`start_cpu.bat` 采用极简策略：
+## llama.cpp 检索辅助入口
 
-- 纯英文输出。
-- 不使用中文 echo。
-- 不使用 `^` 多行续行。
-- 不使用复杂括号块。
-- 启动命令写在一行。
-- 默认 CPU 保守模式：`--contextsize 2048 --port 5001 --skiplauncher --noblas`。
-
-## 校验命令
+准备 GGUF 模型、兼容的 `llama-cli` 和 Python 后，可运行：
 
 ```bash
-python3 scripts/prepare_dataset.py
-python3 scripts/augment_dataset.py
-python3 runtime/retrieval.py --question "用二分法求方程的根，并输出迭代过程"
+python3 app/ask_code.py --question "用牛顿法求方程的根，并输出迭代过程"
+```
+
+该入口默认使用 `runtime/final_examples.json`、`gguf/qwen_matlab_q4_k_m.gguf` 与 `app/llama-cli.exe`，也会尝试系统 PATH 中的 `llama-cli`。支持 `--model`、`--llama-cli`、`--top-k` 和上下文长度参数。模型或推理器缺失时仅打印 prompt，不代表推理成功。
+
+原目标 Windows 机上的 llama.cpp 二进制曾遇到启动即退出和 `0xC0000005`，最终便携部署因此转向 KoboldCpp。排障记录见 [Windows 部署说明](deploy/README_llama_cpp_windows.md)。
+
+## 检查与结果边界
+
+语法检查：
+
+```bash
 python3 -m py_compile scripts/prepare_dataset.py scripts/augment_dataset.py runtime/retrieval.py app/ask_code.py train.py merge_lora.py test_infer.py
 ```
 
-## 外部对话记录
+当前数据结构可核验：49 组课程题、10 组补充题、300 条训练记录、9 条验证记录；增强答案保持基础答案一致，训练与验证的基础题 ID 不重叠。这证明数据处理的可追溯性，不能证明每段 MATLAB 答案都正确，也不能证明微调优于基础模型。
 
-ChatGPT 分享链接作为过程参考：
+仓库尚未提供模型对照、未见题执行通过率、量化前后质量比较或目标机器推理速度的系统测量。完整实践过程与历史部署证据见 [全流程复盘](docs/full_process.md)。
 
-- https://chatgpt.com/share/6a22fdbc-44f8-83ea-b15d-983388ee1106
-- https://chatgpt.com/share/6a22fdd8-3318-83ea-924b-96f3bfa86303
-
-本仓库中的确定性结论优先来自当前工作区产物和可读取的 Codex 线程记录。
+模型权重、adapter、GGUF、推理器可执行文件和训练输出留在本地；GitHub 保存源码、文档和这批课程数据。
